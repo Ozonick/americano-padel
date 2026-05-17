@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: americano-padel
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ADMIN_PASSWORD
+        value: padel2024
+      - key: DB_PATH
+        value: /data/torneo.db
+    disk:
+      name: db
+      mountPath: /data
+      sizeGB: 1
