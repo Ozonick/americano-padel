@@ -310,8 +310,7 @@ function connectWS(){
   ws.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if(data.type === 'state'){
-      S.state = data;
-      applyState(data);
+      applyStateSafe(data);
     }
   };
   ws.onclose = () => {
@@ -321,7 +320,7 @@ function connectWS(){
   };
 }
 
-function applyState(data){
+function applyState(data, skipFixtureRender=false){
   const cfg = data.config || {};
   // Header
   document.getElementById('hdr-nombre').textContent = cfg.torneo_nombre || 'Super Americano';
@@ -341,7 +340,35 @@ function applyState(data){
       Sugerido: <strong>${s.rondas_prel} rondas</strong> prel + ${s.rondas_final} final<br>
       ~${s.mins_x_partido} min/partido · Tiempo est: ${s.tiempo_total_est} min`;
   }
-  renderTab();
+  // Si hay un input de games con foco (admin ingresando), no re-renderizar el fixture
+  if(skipFixtureRender && S.tab === 'fixture'){
+    // Solo actualizar los chips de puntos sin tocar los inputs
+    updatePtsChips(data);
+  } else {
+    renderTab();
+  }
+}
+
+// Actualiza solo los chips de puntos sin re-renderizar el fixture completo
+function updatePtsChips(data){
+  const {grupos, fixtures_prel, resultados} = data;
+  if(!grupos) return;
+  grupos.forEach((grupo, gi)=>{
+    (fixtures_prel[gi]||[]).forEach(([j1,j2,j3,j4], ri)=>{
+      const key = `prel-${gi}-${ri}`;
+      const res = (resultados||{})[key]||{};
+      if(res.ga==null || res.gb==null) return;
+      const ga=+res.ga, gb=+res.gb;
+      const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
+      const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
+      const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
+      if(chipsEl){
+        chipsEl.innerHTML = `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
+          <span style="color:var(--txt3)">vs</span>
+          <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
+      }
+    });
+  });
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
@@ -423,16 +450,21 @@ function renderFixture(){
           </div>
           ${descansan.length ? `<div class="descansan">Descansan: ${descansan.join(', ')}</div>` : ''}
         </div>
-        <div class="games-wrap">
-          ${p1 ? `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>` : ''}
-          <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
-            style="border-color:${col.brd}" ${dis}
-            onchange="saveRes('${key}',this,'a_${gi}_${r}')">
-          <span class="g-dash">—</span>
-          <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
-            style="border-color:${col.brd}" ${dis}
-            onchange="saveRes('${key}',this,'b_${gi}_${r}')">
-          ${p2 ? `<span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>` : ''}
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="games-wrap">
+            <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
+              style="border-color:${col.brd}" ${dis}
+              onchange="saveRes('${key}',this,'a_${gi}_${r}')">
+            <span class="g-dash">—</span>
+            <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
+              style="border-color:${col.brd}" ${dis}
+              onchange="saveRes('${key}',this,'b_${gi}_${r}')">
+          </div>
+          <div id="chips-${gi}-${r}" style="display:flex;gap:4px;font-size:11px;min-height:18px">
+            ${(p1&&p2) ? `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
+            <span style="color:var(--txt3)">vs</span>
+            <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>` : ''}
+          </div>
         </div>
       </div>`;
     });
@@ -653,9 +685,11 @@ function renderConfig(){
         <span class="param-lbl">Tiempo de cancha (min)</span>
         <input class="p-in" id="cfg-tiempo" type="number" min="30" max="240" value="${cfg.tiempo_cancha||90}" oninput="updateSug()">
       </div>
-      <div class="hint-box" id="cfg-sug">
-        ⏱ Con ${cfg.tiempo_cancha||90} min: <strong>${s.rondas_prel||'?'} rondas</strong> prelim + ${s.rondas_final||4} finales<br>
-        ~${s.mins_x_partido||'?'} min/partido · Tiempo estimado total: ${s.tiempo_total_est||'?'} min
+      <div class="hint-box" id="cfg-sug" style="line-height:1.7">
+        ⏱ Con <strong>${cfg.tiempo_cancha||90} min</strong> y ${s.n_x_grupo||6} jug/grupo:<br>
+        Máx sin repetir compañero: <strong>${s.rondas_max_sin_repetir||5} rondas</strong><br>
+        Por tiempo: <strong>${s.rondas_prel_x_tiempo||'?'}</strong> rondas disponibles<br>
+        → Sugerido: <strong>${s.rondas_prel||'?'} prelim</strong> + ${s.rondas_final||4} final · ~${s.tiempo_total_est||'?'} min total
       </div>
       <button class="btn-main" onclick="saveConfig()">Guardar configuración</button>
     </div>
@@ -668,8 +702,9 @@ async function updateSug(){
   const res = await fetch(`/api/sugerencia?tiempo=${t}&games=${g}`);
   const s = await res.json();
   const el = document.getElementById('cfg-sug');
-  if(el) el.innerHTML = `⏱ Con ${t} min: <strong>${s.rondas_prel} rondas</strong> prelim + ${s.rondas_final} finales<br>
-    ~${s.mins_x_partido} min/partido · Tiempo estimado total: ${s.tiempo_total_est} min`;
+  if(el) el.innerHTML = `⏱ Con <strong>${t} min</strong> y ${s.n_x_grupo} jug/grupo:<br>
+    Máx sin repetir: <strong>${s.rondas_max_sin_repetir} rondas</strong> · Por tiempo: ${s.rondas_prel_x_tiempo}<br>
+    → Sugerido: <strong>${s.rondas_prel} prelim</strong> + ${s.rondas_final} final · ~${s.tiempo_total_est} min total`;
 }
 
 async function saveConfig(){
@@ -862,6 +897,25 @@ function closeSidebar(){
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
+
+// Aplica estado sin romper inputs con foco (admin ingresando games)
+function applyStateSafe(data){
+  S.state = data;
+  const focused = document.activeElement;
+  const skip = focused && focused.classList.contains('g-in');
+  applyState(data, skip);
+}
+
+// Cambia grupo de un jugador sin re-renderizar toda la lista
+function changeGrupo(idx, grupo){
+  S.jugadores_edit[idx].grupo = grupo;
+  const rows = document.querySelectorAll('.jug-row');
+  if(rows[idx]){
+    const dot = rows[idx].querySelector('.jug-dot');
+    if(dot) dot.style.background = COLORES[grupo % COLORES.length].txt;
+  }
+}
+
 connectWS();
 </script>
 </body>

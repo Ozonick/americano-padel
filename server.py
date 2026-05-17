@@ -132,26 +132,26 @@ def gen_fixture(grupo: list, rondas: int) -> list:
                     if len(out) >= rondas: return out
     return out
 
-def calcular_rondas_sugeridas(tiempo_min: int, games_partido: int) -> dict:
-    """
-    Tiempo total = tiempo_min minutos
-    Un partido a N games dura aprox: N * 1.5 minutos (estimado conservador)
-    Rondas prel: cada ronda ocupa 1 slot de cancha (todos los grupos juegan simultáneo)
-    + tiempo de rotación: ~3 min por ronda
-    + finales: al menos 3-4 rondas extra al final
-    """
+def calcular_rondas_sugeridas(tiempo_min: int, games_partido: int,
+                              n_jugadores: int = 18, n_canchas: int = 3) -> dict:
     mins_x_partido  = round(games_partido * 1.5)
-    mins_x_ronda    = mins_x_partido + 3      # + rotación
-    mins_finales    = mins_x_ronda * 4        # ~4 rondas de finales
+    mins_x_ronda    = mins_x_partido + 3
+    mins_finales    = mins_x_ronda * 4
     tiempo_prel     = tiempo_min - mins_finales
-    rondas_prel     = max(3, tiempo_prel // mins_x_ronda)
-    rondas_final    = 4
+    rondas_x_tiempo = max(3, tiempo_prel // mins_x_ronda)
+    n_x_grupo = max(4, round(n_jugadores / n_canchas))
+    rondas_max_sin_repetir = n_x_grupo - 1
+    rondas_prel = min(rondas_x_tiempo, rondas_max_sin_repetir)
+    rondas_final = 4
     return {
-        "rondas_prel":        int(rondas_prel),
-        "rondas_final":       rondas_final,
-        "mins_x_partido":     mins_x_partido,
-        "mins_x_ronda":       mins_x_ronda,
-        "tiempo_total_est":   int(rondas_prel * mins_x_ronda + mins_finales),
+        "rondas_prel":            int(rondas_prel),
+        "rondas_prel_x_tiempo":   int(rondas_x_tiempo),
+        "rondas_max_sin_repetir": int(rondas_max_sin_repetir),
+        "rondas_final":           rondas_final,
+        "mins_x_partido":         mins_x_partido,
+        "mins_x_ronda":           mins_x_ronda,
+        "tiempo_total_est":       int(rondas_prel * mins_x_ronda + mins_finales),
+        "n_x_grupo":              n_x_grupo,
     }
 
 def get_full_state() -> dict:
@@ -188,9 +188,12 @@ def get_full_state() -> dict:
         for copa, jug in clasificados.items():
             fixtures_final[copa] = gen_fixture(jug, rondas_fin)
 
+    n_jug = len(jugadores)
     sugerencia = calcular_rondas_sugeridas(
         int(config.get("tiempo_cancha", 90)),
-        int(config.get("games_partido", 16))
+        int(config.get("games_partido", 16)),
+        n_jugadores=n_jug if n_jug > 0 else 18,
+        n_canchas=n_canchas
     )
 
     return {
@@ -364,8 +367,8 @@ async def shuffle(req: ShuffleReq):
 
 # Sugerencia de rondas
 @app.get("/api/sugerencia")
-async def sugerencia(tiempo: int = 90, games: int = 16):
-    return calcular_rondas_sugeridas(tiempo, games)
+async def sugerencia(tiempo: int = 90, games: int = 16, jugadores: int = 18, canchas: int = 3):
+    return calcular_rondas_sugeridas(tiempo, games, jugadores, canchas)
 
 # WebSocket
 @app.websocket("/ws")
