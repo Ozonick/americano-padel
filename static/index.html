@@ -2,592 +2,531 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Super Americano 🎾</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #0f0f0f;
-  --surface: #1a1a1a;
-  --surface2: #222222;
-  --surface3: #2a2a2a;
-  --border: rgba(255,255,255,0.08);
-  --border2: rgba(255,255,255,0.14);
-  --text: #f0f0f0;
-  --text2: #888;
-  --text3: #555;
-  --green: #4cd964;
-  --green-dim: rgba(76,217,100,0.12);
-  --blue: #0a84ff;
-  --blue-dim: rgba(10,132,255,0.12);
-  --amber: #ffa500;
-  --amber-dim: rgba(255,165,0,0.12);
-  --red: #ff453a;
-  --red-dim: rgba(255,69,58,0.12);
-  --r: 10px;
-  --r-sm: 6px;
+  --bg:#0f0f0f; --surf:#1a1a1a; --surf2:#222; --surf3:#2a2a2a;
+  --brd:rgba(255,255,255,0.08); --brd2:rgba(255,255,255,0.14);
+  --txt:#f0f0f0; --txt2:#888; --txt3:#444;
+  --green:#4cd964; --green-d:rgba(76,217,100,0.12);
+  --blue:#0a84ff;  --blue-d:rgba(10,132,255,0.12);
+  --amber:#ffaa00; --amber-d:rgba(255,170,0,0.12);
+  --red:#ff453a;   --red-d:rgba(255,69,58,0.12);
+  --r:10px; --rsm:6px;
 }
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  font-size: 15px;
-  line-height: 1.5;
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:15px}
+button{font-family:'DM Sans',sans-serif;cursor:pointer}
+input{font-family:'DM Sans',sans-serif}
 
-/* ── Header ── */
-.app-header {
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 0;
-  background: rgba(15,15,15,0.92);
-  backdrop-filter: blur(12px);
-  z-index: 100;
-}
-.app-logo {
-  width: 36px; height: 36px;
-  background: var(--green);
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-}
-.app-name { font-size: 17px; font-weight: 600; }
-.app-sub  { font-size: 12px; color: var(--text2); margin-top: 1px; }
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--brd);
+  position:sticky;top:0;background:rgba(15,15,15,.94);backdrop-filter:blur(14px);z-index:100}
+.hdr-logo{width:34px;height:34px;background:var(--green);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hdr-name{font-size:16px;font-weight:600}
+.hdr-sub{font-size:11px;color:var(--txt2)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.role-admin{background:var(--green-d);color:var(--green)}
+.role-viewer{background:var(--surf2);color:var(--txt2)}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex-shrink:0}
+.ws-dot.ok{background:var(--green)}
 
-/* ── Layout ── */
-.layout { display: flex; min-height: calc(100vh - 65px); }
-.sidebar {
-  width: 280px;
-  min-width: 280px;
-  border-right: 1px solid var(--border);
-  padding: 20px 16px;
-  overflow-y: auto;
-  position: sticky;
-  top: 65px;
-  height: calc(100vh - 65px);
-}
-.main { flex: 1; padding: 20px 24px; overflow-y: auto; }
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:calc(100vh - 61px)}
+.sidebar{width:270px;min-width:270px;border-right:1px solid var(--brd);padding:18px 14px;
+  overflow-y:auto;position:sticky;top:61px;height:calc(100vh - 61px)}
+.main{flex:1;padding:20px;overflow-y:auto;max-width:900px}
 
-/* ── Sidebar sections ── */
-.s-section { margin-bottom: 24px; }
-.s-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .1em;
-  color: var(--text3);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-  padding-left: 4px;
-}
-.param-row {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 10px;
-  background: var(--surface2);
-  border-radius: var(--r-sm);
-  margin-bottom: 6px;
-}
-.param-label { font-size: 13px; color: var(--text2); }
-.param-input {
-  width: 60px;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: 5px;
-  color: var(--text);
-  font-family: 'DM Mono', monospace;
-  font-size: 13px;
-  font-weight: 500;
-  text-align: center;
-  padding: 4px 6px;
-  outline: none;
-}
-.param-input:focus { border-color: var(--green); }
-.games-hint {
-  font-size: 11px;
-  color: var(--text3);
-  padding: 0 4px;
-  margin-top: -2px;
-  margin-bottom: 6px;
-}
+/* ── SIDEBAR ── */
+.s-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:10px;padding-left:2px}
+.s-sec{margin-bottom:22px}
+.nav-btn{width:100%;text-align:left;padding:9px 12px;background:transparent;
+  border:none;border-radius:var(--rsm);color:var(--txt2);font-size:14px;
+  display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:2px}
+.nav-btn:hover{background:var(--surf2);color:var(--txt)}
+.nav-btn.active{background:var(--surf3);color:var(--txt);font-weight:500}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.param-row{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;background:var(--surf2);border-radius:var(--rsm);margin-bottom:5px}
+.param-lbl{font-size:13px;color:var(--txt2)}
+.p-in{width:58px;background:var(--surf3);border:1px solid var(--brd2);border-radius:5px;
+  color:var(--txt);font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  text-align:center;padding:4px;outline:none}
+.p-in:focus{border-color:var(--green)}
+.hint-box{background:var(--green-d);border:1px solid rgba(76,217,100,.2);
+  border-radius:var(--rsm);padding:10px 12px;font-size:12px;color:var(--green);margin-top:8px;line-height:1.6}
+.btn-main{width:100%;padding:10px;background:var(--green);border:none;border-radius:var(--r);
+  color:#000;font-size:14px;font-weight:600;margin-top:6px;transition:opacity .15s}
+.btn-main:hover{opacity:.85}
+.btn-sec{width:100%;padding:8px;background:var(--surf2);border:1px solid var(--brd);
+  border-radius:var(--rsm);color:var(--txt2);font-size:13px;margin-top:5px;transition:all .15s}
+.btn-sec:hover{background:var(--surf3);color:var(--txt)}
+.btn-danger{width:100%;padding:8px;background:var(--red-d);border:1px solid rgba(255,69,58,.2);
+  border-radius:var(--rsm);color:var(--red);font-size:13px;margin-top:5px}
 
-/* ── Players list ── */
-.player-row {
-  display: flex; align-items: center; gap: 8px;
-  margin-bottom: 5px;
-}
-.player-num {
-  font-size: 11px;
-  color: var(--text3);
-  font-family: 'DM Mono', monospace;
-  min-width: 18px;
-  text-align: right;
-}
-.player-input {
-  flex: 1;
-  background: var(--surface2);
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  padding: 6px 10px;
-  outline: none;
-  transition: border-color .15s;
-}
-.player-input:focus { border-color: var(--border2); background: var(--surface3); }
-.player-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0;
-}
+/* ── TABS ── */
+.tabs{display:flex;gap:3px;background:var(--surf);padding:4px;border-radius:var(--r);
+  margin-bottom:18px;width:fit-content;flex-wrap:wrap}
+.tab{padding:7px 16px;font-size:13px;font-weight:500;border:none;border-radius:7px;
+  background:transparent;color:var(--txt2);cursor:pointer;transition:all .15s}
+.tab.active{background:var(--surf3);color:var(--txt)}
 
-.player-actions {
-  display: flex; gap: 6px; margin-top: 8px;
-}
-.btn-sm {
-  flex: 1;
-  padding: 6px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--text2);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all .15s;
-}
-.btn-sm:hover { background: var(--surface3); color: var(--text); }
+/* ── CARDS ── */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);
+  overflow:hidden;margin-bottom:12px}
+.card-hdr{padding:11px 16px;border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title{font-size:13px;font-weight:600}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;border:1px solid transparent}
 
-/* ── Generate button ── */
-.btn-generate {
-  width: 100%;
-  padding: 11px;
-  background: var(--green);
-  border: none;
-  border-radius: var(--r);
-  color: #000;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  margin-top: 8px;
-  transition: opacity .15s, transform .1s;
-}
-.btn-generate:hover  { opacity: .88; }
-.btn-generate:active { transform: scale(.98); }
+/* ── FIXTURE ROWS ── */
+.ronda-lbl{padding:5px 16px;font-size:10px;font-weight:600;letter-spacing:.08em;
+  color:var(--txt3);text-transform:uppercase;background:var(--surf2);
+  border-bottom:1px solid var(--brd)}
+.partido-row{display:flex;align-items:center;gap:10px;padding:11px 16px;
+  border-bottom:1px solid var(--brd);transition:background .1s}
+.partido-row:last-child{border-bottom:none}
+.partido-row:hover{background:var(--surf2)}
+.g-pill{width:26px;height:26px;border-radius:50%;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.equipos{flex:1;min-width:0}
+.e-names{font-size:13px;font-weight:500;line-height:1.4}
+.e-sep{color:var(--txt3);margin:0 5px;font-weight:300}
+.e-vs{color:var(--txt3);margin:0 8px;font-size:12px}
+.descansan{font-size:11px;color:var(--txt3);font-style:italic;margin-top:2px}
+.games-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.g-in{width:46px;background:var(--surf3);border:1px solid var(--brd2);border-radius:var(--rsm);
+  color:var(--txt);font-family:'DM Mono',monospace;font-size:16px;font-weight:600;
+  text-align:center;padding:6px 4px;outline:none;transition:border-color .15s}
+.g-in:focus{box-shadow:0 0 0 3px rgba(76,217,100,.12)}
+.g-in:disabled{opacity:.4;cursor:not-allowed}
+.g-dash{color:var(--txt3);font-size:13px}
+.pts-chip{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px}
 
-/* ── Tabs ── */
-.tabs {
-  display: flex; gap: 4px;
-  margin-bottom: 20px;
-  background: var(--surface);
-  padding: 4px;
-  border-radius: var(--r);
-  width: fit-content;
-}
-.tab {
-  padding: 7px 18px;
-  font-size: 13px;
-  font-weight: 500;
-  border: none;
-  border-radius: 7px;
-  background: transparent;
-  color: var(--text2);
-  cursor: pointer;
-  transition: all .15s;
-  white-space: nowrap;
-}
-.tab.active {
-  background: var(--surface3);
-  color: var(--text);
-}
+/* ── POSICIONES ── */
+.pos-table{width:100%;border-collapse:collapse}
+.pos-table th{font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.06em;
+  text-transform:uppercase;padding:9px 12px;text-align:center;border-bottom:1px solid var(--brd)}
+.pos-table th:nth-child(2){text-align:left}
+.pos-table td{padding:10px 12px;border-bottom:1px solid var(--brd);text-align:center;font-size:13px}
+.pos-table td:nth-child(2){text-align:left;font-weight:500}
+.pos-table tr:last-child td{border-bottom:none}
+.rk{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:700;background:var(--surf3);color:var(--txt2)}
+.rk.g{background:rgba(255,170,0,.18);color:var(--amber)}
+.rk.s{background:rgba(10,132,255,.15);color:var(--blue)}
+.pts-val{font-family:'DM Mono',monospace;font-weight:600;font-size:15px}
+.dif-p{color:var(--green)} .dif-n{color:var(--red)}
 
-/* ── Cards ── */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-.card-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.card-title { font-size: 13px; font-weight: 600; }
-.card-badge {
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 20px;
-  font-weight: 500;
-}
-.card-body { padding: 0; }
+/* ── FINALES ── */
+.copa-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:13px;font-weight:600}
+.cls-list{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px;
+  border-top:1px solid var(--brd)}
+.cls-chip{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid}
 
-/* ── Ronda block ── */
-.ronda-label {
-  padding: 6px 16px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: .08em;
-  color: var(--text3);
-  text-transform: uppercase;
-  background: var(--surface2);
-  border-bottom: 1px solid var(--border);
-}
-.partido-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  transition: background .1s;
-}
-.partido-row:last-child { border-bottom: none; }
-.partido-row:hover { background: var(--surface2); }
-.grupo-pill {
-  width: 26px; height: 26px; border-radius: 50%;
-  font-size: 11px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.equipos { flex: 1; min-width: 0; }
-.equipo-names { font-size: 14px; font-weight: 500; }
-.equipo-names .sep { color: var(--text3); margin: 0 6px; font-weight: 300; }
-.descansa-txt { font-size: 11px; color: var(--text3); margin-top: 2px; font-style: italic; }
-.games-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-.game-in {
-  width: 48px;
-  background: var(--surface3);
-  border: 1px solid var(--border2);
-  border-radius: var(--r-sm);
-  color: var(--text);
-  font-family: 'DM Mono', monospace;
-  font-size: 16px;
-  font-weight: 600;
-  text-align: center;
-  padding: 6px 4px;
-  outline: none;
-  transition: border-color .15s;
-}
-.game-in:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(76,217,100,.1); }
-.games-dash { color: var(--text3); font-size: 13px; }
+/* ── ADMIN PANEL ── */
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.jug-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.jug-num{font-size:11px;color:var(--txt3);min-width:18px;text-align:right;
+  font-family:'DM Mono',monospace}
+.jug-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.jug-in{flex:1;background:var(--surf2);border:1px solid transparent;border-radius:var(--rsm);
+  color:var(--txt);font-size:13px;padding:6px 10px;outline:none}
+.jug-in:focus{border-color:var(--brd2)}
+.grp-sel{background:var(--surf2);border:1px solid var(--brd);border-radius:var(--rsm);
+  color:var(--txt2);font-size:12px;padding:4px 6px;outline:none;width:52px}
 
-/* ── Posiciones ── */
-.pos-table { width: 100%; border-collapse: collapse; }
-.pos-table th {
-  font-size: 11px; font-weight: 600;
-  color: var(--text3);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  padding: 10px 12px;
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-}
-.pos-table th:nth-child(2) { text-align: left; }
-.pos-table td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  text-align: center;
-  font-size: 14px;
-}
-.pos-table td:nth-child(2) { text-align: left; font-weight: 500; }
-.pos-table tr:last-child td { border-bottom: none; }
-.pos-rk {
-  width: 24px; height: 24px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700;
-  background: var(--surface3);
-  color: var(--text2);
-}
-.pos-rk.gold   { background: rgba(255,165,0,.2);   color: var(--amber); }
-.pos-rk.silver { background: rgba(10,132,255,.15); color: var(--blue); }
-.pts-val { font-family: 'DM Mono', monospace; font-weight: 600; font-size: 15px; }
-.dif-pos { color: var(--green); }
-.dif-neg { color: var(--red); }
+/* ── LOGIN ── */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:80vh}
+.login-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);
+  padding:32px;width:320px;text-align:center}
+.login-title{font-size:18px;font-weight:600;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--txt2);margin-bottom:24px}
+.login-in{width:100%;background:var(--surf2);border:1px solid var(--brd2);border-radius:var(--rsm);
+  color:var(--txt);font-size:15px;padding:10px 14px;outline:none;margin-bottom:10px;text-align:center}
+.login-in:focus{border-color:var(--green)}
+.login-err{font-size:12px;color:var(--red);margin-top:6px;min-height:16px}
+.btn-ghost{background:transparent;border:1px solid var(--brd);border-radius:var(--rsm);
+  color:var(--txt2);font-size:13px;padding:7px 16px;margin-top:8px}
 
-/* ── Copa headers ── */
-.copa-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 16px;
-  font-size: 13px; font-weight: 600;
-}
-.clasificados-list {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  padding: 10px 16px;
-  border-top: 1px solid var(--border);
-}
-.clas-chip {
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 20px;
-  border: 1px solid;
-}
+/* ── EMPTY / LOADING ── */
+.empty{text-align:center;padding:60px 20px;color:var(--txt3)}
+.empty-ico{font-size:40px;margin-bottom:10px}
+.spinner{width:24px;height:24px;border:2px solid var(--brd);border-top-color:var(--green);
+  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── Empty state ── */
-.empty {
-  text-align: center;
-  padding: 60px 20px;
-  color: var(--text3);
-}
-.empty-icon { font-size: 40px; margin-bottom: 12px; }
-.empty-txt { font-size: 14px; }
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--surf3);border:1px solid var(--brd2);border-radius:var(--r);
+  padding:10px 20px;font-size:13px;font-weight:500;z-index:999;
+  animation:fade-in .2s ease;pointer-events:none}
+@keyframes fade-in{from{opacity:0;transform:translateX(-50%) translateY(8px)}}
 
-/* ── Responsive (tablet) ── */
-@media (max-width: 720px) {
-  .sidebar {
-    position: fixed; left: -280px; top: 0; height: 100vh;
-    z-index: 200; background: var(--bg);
-    transition: left .25s;
-  }
-  .sidebar.open { left: 0; }
-  .overlay {
-    display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,.6); z-index: 199;
-  }
-  .overlay.show { display: block; }
-  .main { padding: 16px; }
-  .menu-btn { display: flex !important; }
-  .tabs { overflow-x: auto; width: 100%; }
-  .partido-row { flex-wrap: wrap; gap: 8px; }
+/* ── MOBILE ── */
+@media(max-width:700px){
+  .sidebar{display:none;position:fixed;left:0;top:0;height:100vh;z-index:200;
+    background:var(--bg);width:280px}
+  .sidebar.open{display:block}
+  .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199}
+  .mob-overlay.show{display:block}
+  .main{padding:14px}
+  .admin-grid{grid-template-columns:1fr}
+  .mob-menu{display:flex!important}
+  .e-names{font-size:12px}
+  .partido-row{padding:9px 12px;gap:8px}
 }
-.menu-btn {
-  display: none;
-  align-items: center; justify-content: center;
-  width: 34px; height: 34px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 18px;
-  margin-right: 4px;
-}
-
-/* ── Print ── */
-@media print {
-  .sidebar, .app-header, .tabs, .menu-btn { display: none !important; }
-  .main { padding: 0; }
-  .card { break-inside: avoid; border: 1px solid #ccc; }
-  body { background: white; color: black; }
-  .partido-row { border-bottom: 1px solid #eee; }
-  .game-in { border: 1px solid #ccc; }
-}
+.mob-menu{display:none;align-items:center;justify-content:center;
+  width:34px;height:34px;background:var(--surf2);border:1px solid var(--brd);
+  border-radius:var(--rsm);color:var(--txt);font-size:18px;margin-right:4px}
 </style>
 </head>
 <body>
 
-<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<div class="mob-overlay" id="overlay" onclick="closeSidebar()"></div>
 
-<header class="app-header">
-  <button class="menu-btn" id="menu-btn" onclick="toggleSidebar()" aria-label="Menú">☰</button>
-  <div class="app-logo">🎾</div>
+<!-- HEADER -->
+<header class="hdr">
+  <button class="mob-menu" onclick="toggleSidebar()">☰</button>
+  <div class="hdr-logo">🎾</div>
   <div>
-    <div class="app-name">Super Americano</div>
-    <div class="app-sub">Generador de fixture</div>
+    <div class="hdr-name" id="hdr-nombre">Super Americano</div>
+    <div class="hdr-sub" id="hdr-sub">Cargando...</div>
   </div>
-  <div style="margin-left:auto;display:flex;gap:8px">
-    <button class="btn-sm" onclick="window.print()" style="padding:6px 14px;font-size:12px">Imprimir</button>
+  <div class="hdr-right">
+    <div class="ws-dot" id="ws-dot" title="Conexión en tiempo real"></div>
+    <span class="role-badge" id="role-badge">Viewer</span>
+    <button class="btn-ghost" style="padding:5px 12px;font-size:12px" onclick="showLogin()">
+      Admin
+    </button>
   </div>
 </header>
 
 <div class="layout">
 
-  <!-- ── Sidebar ── -->
-  <aside class="sidebar" id="sidebar">
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="s-sec">
+    <div class="s-lbl">Vista</div>
+    <button class="nav-btn active" id="nav-fixture" onclick="setTab('fixture')">
+      <span class="nav-icon">📋</span> Fixture
+    </button>
+    <button class="nav-btn" id="nav-posiciones" onclick="setTab('posiciones')">
+      <span class="nav-icon">🏆</span> Posiciones
+    </button>
+    <button class="nav-btn" id="nav-finales" onclick="setTab('finales')">
+      <span class="nav-icon">⚡</span> Finales
+    </button>
+  </div>
 
-    <div class="s-section">
-      <div class="s-label">Parámetros</div>
-      <div class="param-row">
-        <span class="param-label">Canchas / grupos</span>
-        <input class="param-input" type="number" id="p-canchas" value="3" min="1" max="8" oninput="updateHint()">
-      </div>
-      <div class="param-row">
-        <span class="param-label">Rondas preliminar</span>
-        <input class="param-input" type="number" id="p-rondas" value="7" min="1" max="15">
-      </div>
-      <div class="param-row">
-        <span class="param-label">Rondas finales</span>
-        <input class="param-input" type="number" id="p-rondas-f" value="5" min="1" max="10">
-      </div>
-      <div class="param-row">
-        <span class="param-label">Games por partido</span>
-        <input class="param-input" type="number" id="p-games" value="16" min="4" max="40">
-      </div>
-      <div class="games-hint" id="games-hint">Cuando un equipo llega a 16 games, rotan.</div>
+  <div class="s-sec" id="sidebar-admin" style="display:none">
+    <div class="s-lbl">Admin</div>
+    <button class="nav-btn" id="nav-config" onclick="setTab('config')">
+      <span class="nav-icon">⚙️</span> Configuración
+    </button>
+    <button class="nav-btn" id="nav-jugadores" onclick="setTab('jugadores')">
+      <span class="nav-icon">👥</span> Jugadores
+    </button>
+    <div style="margin-top:10px">
+      <button class="btn-danger" onclick="confirmReset()">🗑 Nuevo torneo</button>
     </div>
+  </div>
 
-    <div class="s-section">
-      <div class="s-label">Jugadores <span id="jug-total" style="font-weight:400;color:var(--text3)"></span></div>
-      <div id="players-list"></div>
-      <div class="player-actions">
-        <button class="btn-sm" onclick="addPlayer()">+ Agregar</button>
-        <button class="btn-sm" onclick="removePlayer()">− Quitar</button>
-      </div>
-    </div>
+  <!-- Parámetros rápidos solo lectura -->
+  <div class="s-sec" id="params-display">
+    <div class="s-lbl">Parámetros</div>
+    <div class="param-row"><span class="param-lbl">Canchas</span><span id="p-canchas" class="pts-val" style="font-size:14px">—</span></div>
+    <div class="param-row"><span class="param-lbl">Games/partido</span><span id="p-games" class="pts-val" style="font-size:14px">—</span></div>
+    <div class="param-row"><span class="param-lbl">Rondas prel.</span><span id="p-rondas" class="pts-val" style="font-size:14px">—</span></div>
+    <div class="param-row"><span class="param-lbl">Rondas final</span><span id="p-rondas-f" class="pts-val" style="font-size:14px">—</span></div>
+  </div>
 
-    <button class="btn-generate" onclick="generate()">⚡ Generar fixture</button>
+  <div class="s-sec">
+    <div class="hint-box" id="hint-tiempo" style="display:none"></div>
+  </div>
+</aside>
 
-  </aside>
-
-  <!-- ── Main ── -->
-  <main class="main">
-    <div class="tabs" id="tabs">
-      <button class="tab active" onclick="setTab(0)">Fixture</button>
-      <button class="tab" onclick="setTab(1)">Posiciones</button>
-      <button class="tab" onclick="setTab(2)">Finales</button>
-    </div>
-    <div id="output">
-      <div class="empty">
-        <div class="empty-icon">🎾</div>
-        <div class="empty-txt">Configurá los parámetros y presioná<br><strong>Generar fixture</strong></div>
-      </div>
-    </div>
-  </main>
+<!-- MAIN -->
+<main class="main" id="main-content">
+  <div class="empty"><div class="spinner"></div><div style="margin-top:12px;font-size:13px;color:var(--txt2)">Conectando...</div></div>
+</main>
 
 </div>
 
+<!-- LOGIN MODAL (inline, toggle) -->
+<div id="login-wrap" style="display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center">
+  <div class="login-card">
+    <div class="login-title">🔐 Acceso admin</div>
+    <div class="login-sub">Ingresá la contraseña para editar</div>
+    <input class="login-in" type="password" id="login-pass" placeholder="Contraseña"
+      onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-main" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login-err"></div>
+    <br>
+    <button class="btn-ghost" onclick="hideLogin()">Cancelar</button>
+  </div>
+</div>
+
 <script>
+// ── Estado global ──────────────────────────────────────────────────────────
+const S = {
+  role: 'viewer',    // 'viewer' | 'admin'
+  password: '',
+  tab: 'fixture',
+  state: null,       // último estado del servidor
+  ws: null,
+  jugadores_edit: [], // copia editable en el panel jugadores
+};
+
 const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const COLORES = [
-  {bg:'rgba(76,217,100,.15)',  border:'rgba(76,217,100,.4)',  text:'#4cd964', dot:'#4cd964'},
-  {bg:'rgba(10,132,255,.15)',  border:'rgba(10,132,255,.4)',  text:'#0a84ff', dot:'#0a84ff'},
-  {bg:'rgba(255,165,0,.15)',   border:'rgba(255,165,0,.4)',   text:'#ffaa00', dot:'#ffaa00'},
-  {bg:'rgba(255,69,58,.15)',   border:'rgba(255,69,58,.4)',   text:'#ff453a', dot:'#ff453a'},
-  {bg:'rgba(191,90,242,.15)',  border:'rgba(191,90,242,.4)',  text:'#bf5af2', dot:'#bf5af2'},
-  {bg:'rgba(100,210,255,.15)', border:'rgba(100,210,255,.4)', text:'#64d2ff', dot:'#64d2ff'},
+  {bg:'rgba(76,217,100,.14)',  brd:'rgba(76,217,100,.35)',  txt:'#4cd964'},
+  {bg:'rgba(10,132,255,.14)',  brd:'rgba(10,132,255,.35)',  txt:'#4da6ff'},
+  {bg:'rgba(255,170,0,.14)',   brd:'rgba(255,170,0,.35)',   txt:'#ffaa00'},
+  {bg:'rgba(255,69,58,.14)',   brd:'rgba(255,69,58,.35)',   txt:'#ff6b62'},
+  {bg:'rgba(191,90,242,.14)',  brd:'rgba(191,90,242,.35)',  txt:'#bf5af2'},
+  {bg:'rgba(100,210,255,.14)', brd:'rgba(100,210,255,.35)', txt:'#64d2ff'},
 ];
 
-let players = [
-  'Marcelo ©','Amazing','David','Jose A','Patricio','Urraca',
-  'Juan Cruz ©','Rodo','Rocky','Juanma','Christopher','Gustavo',
-  'Diego ©','Daniel','Porpatto','Pipi','Marcelo Pr','Leo'
-];
-let activeTab = 0;
-let fixtureData = null;
-let resultados = {};
-let resultadosFinal = {};
+// ── WebSocket ──────────────────────────────────────────────────────────────
+function connectWS(){
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/ws`);
+  S.ws = ws;
 
-// ── Sidebar mobile ──
-function toggleSidebar(){
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('overlay').classList.toggle('show');
+  ws.onopen = () => {
+    document.getElementById('ws-dot').classList.add('ok');
+    // keep-alive ping cada 25s
+    S._ping = setInterval(()=>{ if(ws.readyState===1) ws.send('ping'); }, 25000);
+  };
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if(data.type === 'state'){
+      applyStateSafe(data);
+    }
+  };
+  ws.onclose = () => {
+    document.getElementById('ws-dot').classList.remove('ok');
+    clearInterval(S._ping);
+    setTimeout(connectWS, 2000); // reconectar
+  };
 }
-function closeSidebar(){
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
+
+function applyState(data, skipFixtureRender=false){
+  const cfg = data.config || {};
+  // Header
+  document.getElementById('hdr-nombre').textContent = cfg.torneo_nombre || 'Super Americano';
+  document.getElementById('hdr-sub').textContent =
+    `${data.jugadores?.length || 0} jugadores · ${cfg.canchas || '?'} canchas`;
+  // Params sidebar
+  document.getElementById('p-canchas').textContent = cfg.canchas || '—';
+  document.getElementById('p-games').textContent   = cfg.games_partido || '—';
+  document.getElementById('p-rondas').textContent  = cfg.rondas_prel || '—';
+  document.getElementById('p-rondas-f').textContent= cfg.rondas_final || '—';
+  // Sugerencia
+  if(data.sugerencia){
+    const s = data.sugerencia;
+    const box = document.getElementById('hint-tiempo');
+    box.style.display = 'block';
+    box.innerHTML = `⏱ <strong>${cfg.tiempo_cancha||90} min</strong> de cancha<br>
+      Sugerido: <strong>${s.rondas_prel} rondas</strong> prel + ${s.rondas_final} final<br>
+      ~${s.mins_x_partido} min/partido · Tiempo est: ${s.tiempo_total_est} min`;
+  }
+  // Si hay un input de games con foco (admin ingresando), no re-renderizar el fixture
+  if(skipFixtureRender && S.tab === 'fixture'){
+    // Solo actualizar los chips de puntos sin tocar los inputs
+    updatePtsChips(data);
+  } else {
+    renderTab();
+  }
 }
 
-// ── Players ──
-function renderPlayers(){
-  const jug = players.filter(p=>p.trim());
-  document.getElementById('jug-total').textContent = `(${jug.length})`;
-  const nc = parseInt(document.getElementById('p-canchas').value)||1;
-  const tam = Math.max(4, Math.round(jug.length/nc));
-
-  let html = '';
-  players.forEach((p,i)=>{
-    const gi = Math.floor(i/tam);
-    const col = COLORES[gi % COLORES.length];
-    html += `<div class="player-row">
-      <span class="player-num">${i+1}</span>
-      <span class="player-dot" style="background:${col.dot}"></span>
-      <input class="player-input" type="text" value="${p}"
-        oninput="players[${i}]=this.value;updateDots()"
-        placeholder="Jugador ${i+1}">
-    </div>`;
+// Actualiza solo los chips de puntos sin re-renderizar el fixture completo
+function updatePtsChips(data){
+  const {grupos, fixtures_prel, resultados} = data;
+  if(!grupos) return;
+  grupos.forEach((grupo, gi)=>{
+    (fixtures_prel[gi]||[]).forEach(([j1,j2,j3,j4], ri)=>{
+      const key = `prel-${gi}-${ri}`;
+      const res = (resultados||{})[key]||{};
+      if(res.ga==null || res.gb==null) return;
+      const ga=+res.ga, gb=+res.gb;
+      const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
+      const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
+      const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
+      if(chipsEl){
+        chipsEl.innerHTML = `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
+          <span style="color:var(--txt3)">vs</span>
+          <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
+      }
+    });
   });
-  document.getElementById('players-list').innerHTML = html;
 }
 
-function updateDots(){
-  // sync players array from inputs
-  document.querySelectorAll('.player-input').forEach((el,i)=>{ players[i]=el.value; });
-  document.getElementById('jug-total').textContent = `(${players.filter(p=>p.trim()).length})`;
-}
-
-function addPlayer(){ players.push(''); renderPlayers(); }
-function removePlayer(){ if(players.length>4){ players.pop(); renderPlayers(); } }
-
-function updateHint(){
-  const g = parseInt(document.getElementById('p-games').value)||16;
-  document.getElementById('games-hint').textContent =
-    `Cuando un equipo llega a ${g} games, rotan.`;
-  renderPlayers();
-}
-
-// ── Tabs ──
-function setTab(i){
-  activeTab = i;
-  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j));
-  renderOutput();
-}
-
-// ── Fixture generation ──
-const FIXTURE_6 = [[0,1,2,3],[1,3,2,4],[2,5,3,4],[3,4,5,0],[4,0,5,1],[5,3,0,1],[1,2,0,5]];
-
-function genFixture(grupo, rondas){
-  const n = grupo.length;
-  if(n === 6){
-    return FIXTURE_6.slice(0,rondas).map(([a,b,c,d])=>[grupo[a],grupo[b],grupo[c],grupo[d]]);
-  }
-  const seen = new Set(), out = [];
-  for(let a=0;a<n&&out.length<rondas;a++)
-    for(let b=a+1;b<n&&out.length<rondas;b++)
-      for(let c=0;c<n&&out.length<rondas;c++)
-        for(let d=c+1;d<n&&out.length<rondas;d++){
-          if(a===c||a===d||b===c||b===d) continue;
-          const k=[Math.min(a,b),Math.max(a,b),Math.min(c,d),Math.max(c,d)].join('-');
-          if(!seen.has(k)){ seen.add(k); out.push([grupo[a],grupo[b],grupo[c],grupo[d]]); }
-        }
-  return out;
-}
-
-function dividirGrupos(jug, nc){
-  const tam = Math.max(4, Math.round(jug.length/nc));
-  const gs = [];
-  for(let i=0;i<jug.length;i+=tam){
-    const g = jug.slice(i,i+tam);
-    if(g.length) gs.push(g);
-  }
-  return gs;
-}
-
-function generate(){
-  const jug = players.map(p=>p.trim()).filter(Boolean);
-  if(jug.length < 4){ alert('Ingresá al menos 4 jugadores.'); return; }
-  const nc = parseInt(document.getElementById('p-canchas').value)||3;
-  const rp = parseInt(document.getElementById('p-rondas').value)||7;
-  const rf = parseInt(document.getElementById('p-rondas-f').value)||5;
-  const ng = parseInt(document.getElementById('p-games').value)||16;
-
-  const grupos   = dividirGrupos(jug, nc);
-  const fixtures = grupos.map(g => genFixture(g, rp));
-
-  fixtureData = { grupos, fixtures, rondas:rp, rondasFinal:rf, nGames:ng };
-  resultados = {};
-  resultadosFinal = {};
-
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function setTab(tab){
+  S.tab = tab;
+  ['fixture','posiciones','finales','config','jugadores'].forEach(t=>{
+    const el = document.getElementById(`nav-${t}`);
+    if(el) el.classList.toggle('active', t===tab);
+  });
   closeSidebar();
-  renderOutput();
+  renderTab();
 }
 
-// ── Stats ──
-function calcStats(){
-  if(!fixtureData) return {};
-  const { grupos, fixtures } = fixtureData;
-  const stats = {};
-  grupos.forEach((g,gi)=> g.forEach(j=>{ stats[j]={pj:0,gf:0,gc:0,pts:0,gi}; }));
+function renderTab(){
+  const el = document.getElementById('main-content');
+  if(!S.state){
+    el.innerHTML = '<div class="empty"><div class="spinner"></div></div>';
+    return;
+  }
+  if(S.tab==='fixture')     el.innerHTML = renderFixture();
+  if(S.tab==='posiciones')  el.innerHTML = renderPosiciones();
+  if(S.tab==='finales')     el.innerHTML = renderFinales();
+  if(S.tab==='config')      el.innerHTML = S.role==='admin' ? renderConfig()    : noAccess();
+  if(S.tab==='jugadores')   el.innerHTML = S.role==='admin' ? renderJugadores() : noAccess();
+}
 
-  grupos.forEach((g,gi)=>{
-    fixtures[gi].forEach(([j1,j2,j3,j4], ri)=>{
-      const res = resultados[`${gi}-${ri}`];
-      if(!res || res.ga==='' || res.gb==='') return;
-      const ga=parseInt(res.ga)||0, gb=parseInt(res.gb)||0;
-      [j1,j2].forEach(j=>{ if(stats[j]){ stats[j].gf+=ga; stats[j].gc+=gb; stats[j].pj++; } });
-      [j3,j4].forEach(j=>{ if(stats[j]){ stats[j].gf+=gb; stats[j].gc+=ga; stats[j].pj++; } });
+function noAccess(){
+  return `<div class="empty"><div class="empty-ico">🔒</div>
+    <div style="font-size:14px;margin-top:8px">Solo el admin puede ver esta sección</div></div>`;
+}
+
+// ── FIXTURE ───────────────────────────────────────────────────────────────
+function renderFixture(){
+  const {grupos, fixtures_prel, config, resultados} = S.state;
+  if(!grupos || !grupos.length)
+    return `<div class="empty"><div class="empty-ico">👥</div>
+      <div style="font-size:14px;margin-top:8px">No hay jugadores cargados.<br>
+      El admin debe configurar el torneo.</div></div>`;
+
+  const rp = parseInt(config.rondas_prel)||7;
+  const ng = parseInt(config.games_partido)||16;
+  let html = '';
+
+  for(let r=0;r<rp;r++){
+    html += `<div class="card">
+      <div class="card-hdr">
+        <span class="card-title">Ronda ${r+1}</span>
+        <span class="badge" style="background:var(--green-d);color:var(--green)">hasta ${ng} games</span>
+      </div>`;
+
+    grupos.forEach((grupo, gi)=>{
+      if(!fixtures_prel[gi] || r >= fixtures_prel[gi].length) return;
+      const [j1,j2,j3,j4] = fixtures_prel[gi][r];
+      const col = COLORES[gi % COLORES.length];
+      const jugando = new Set([j1,j2,j3,j4]);
+      const descansan = grupo.filter(p=>!jugando.has(p));
+      const key = `prel-${gi}-${r}`;
+      const res = (resultados||{})[key] || {};
+      const ga = res.ga ?? '';
+      const gb = res.gb ?? '';
+
+      // Puntos actuales
+      let p1='', p2='';
+      if(ga!==''&&gb!==''){
+        const a=+ga,b=+gb;
+        p1=a>b?'3pts':a===b?'1pt':'0pts';
+        p2=b>a?'3pts':a===b?'1pt':'0pts';
+      }
+
+      const dis = S.role!=='admin' ? 'disabled' : '';
+
+      html += `<div class="partido-row" style="border-left:4px solid ${col.txt};padding-left:12px">
+        <span class="g-pill" style="background:${col.bg};color:${col.txt};font-weight:800">${LETRAS[gi]}</span>
+        <div class="equipos">
+          <div class="e-names">
+            <strong>${j1}</strong><span class="e-sep">+</span><strong>${j2}</strong>
+            <span class="e-vs">vs</span>
+            <strong>${j3}</strong><span class="e-sep">+</span><strong>${j4}</strong>
+          </div>
+          ${descansan.length ? `<div class="descansan">Descansan: ${descansan.join(', ')}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="games-wrap">
+            <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
+              style="border-color:${col.brd}" ${dis}
+              onchange="saveRes('${key}',this,'a_${gi}_${r}')">
+            <span class="g-dash">—</span>
+            <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
+              style="border-color:${col.brd}" ${dis}
+              onchange="saveRes('${key}',this,'b_${gi}_${r}')">
+          </div>
+          <div id="chips-${gi}-${r}" style="display:flex;gap:4px;font-size:11px;min-height:18px">
+            ${(p1&&p2) ? `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
+            <span style="color:var(--txt3)">vs</span>
+            <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+    });
+
+    html += `</div>`;
+  }
+  return html;
+}
+
+async function saveRes(key, inputEl, pairKey){
+  if(S.role !== 'admin') return;
+  // Buscar el par (a y b) del mismo partido
+  const parts = key.split('-'); // prel-gi-ri
+  const gi = parts[1], ri = parts[2];
+  const keyA = `a_${gi}_${ri}`, keyB = `b_${gi}_${ri}`;
+  const elA = document.querySelector(`input[onchange*="${keyA}"]`);
+  const elB = document.querySelector(`input[onchange*="${keyB}"]`);
+  if(!elA || !elB || elA.value==='' || elB.value==='') return;
+
+  const body = {
+    password: S.password,
+    id: key,
+    games_a: parseInt(elA.value),
+    games_b: parseInt(elB.value),
+    fase: 'prel'
+  };
+  const res = await api('/api/resultado', body);
+  if(res.ok) toast('✓ Guardado');
+}
+
+async function saveResFinal(key, inputEl, pairKey){
+  if(S.role !== 'admin') return;
+  const parts = key.split('-'); // final-copa-ri
+  const copa = parts[1], ri = parts[2];
+  const keyA = `fa_${copa}_${ri}`, keyB = `fb_${copa}_${ri}`;
+  const elA = document.querySelector(`input[onchange*="${keyA}"]`);
+  const elB = document.querySelector(`input[onchange*="${keyB}"]`);
+  if(!elA || !elB || elA.value==='' || elB.value==='') return;
+
+  const body = {
+    password: S.password,
+    id: key,
+    games_a: parseInt(elA.value),
+    games_b: parseInt(elB.value),
+    fase: 'final'
+  };
+  const res = await api('/api/resultado', body);
+  if(res.ok) toast('✓ Guardado');
+}
+
+// ── POSICIONES ────────────────────────────────────────────────────────────
+function calcStats(){
+  const {grupos, fixtures_prel, resultados} = S.state;
+  const stats = {};
+  (grupos||[]).forEach((g,gi)=>{
+    g.forEach(j=>{ stats[j]={pj:0,gf:0,gc:0,pts:0,gi}; });
+    (fixtures_prel[gi]||[]).forEach(([j1,j2,j3,j4], ri)=>{
+      const res = (resultados||{})[`prel-${gi}-${ri}`];
+      if(!res || res.ga==null) return;
+      const ga=+res.ga, gb=+res.gb;
+      [j1,j2].forEach(j=>{ if(stats[j]){stats[j].gf+=ga;stats[j].gc+=gb;stats[j].pj++;} });
+      [j3,j4].forEach(j=>{ if(stats[j]){stats[j].gf+=gb;stats[j].gc+=ga;stats[j].pj++;} });
       const p1=ga>gb?3:ga===gb?1:0, p2=gb>ga?3:ga===gb?1:0;
       [j1,j2].forEach(j=>{ if(stats[j]) stats[j].pts+=p1; });
       [j3,j4].forEach(j=>{ if(stats[j]) stats[j].pts+=p2; });
@@ -597,202 +536,387 @@ function calcStats(){
 }
 
 function sortGrupo(grupo, stats){
-  return grupo.slice().sort((a,b)=>{
-    if((stats[b]?.pts||0) !== (stats[a]?.pts||0)) return (stats[b]?.pts||0)-(stats[a]?.pts||0);
-    const da=(stats[a]?.gf||0)-(stats[a]?.gc||0), db=(stats[b]?.gf||0)-(stats[b]?.gc||0);
+  return [...grupo].sort((a,b)=>{
+    const sa=stats[a]||{}, sb=stats[b]||{};
+    if((sb.pts||0)!==(sa.pts||0)) return (sb.pts||0)-(sa.pts||0);
+    const da=(sa.gf||0)-(sa.gc||0), db=(sb.gf||0)-(sb.gc||0);
     if(db!==da) return db-da;
-    return (stats[b]?.gf||0)-(stats[a]?.gf||0);
+    return (sb.gf||0)-(sa.gf||0);
   });
 }
 
-// ── Render ──
-function renderOutput(){
-  if(!fixtureData){
-    document.getElementById('output').innerHTML =
-      `<div class="empty"><div class="empty-icon">🎾</div><div class="empty-txt">Configurá y presioná <strong>Generar fixture</strong></div></div>`;
-    return;
-  }
-  if(activeTab===0) renderFixture();
-  if(activeTab===1) renderPosiciones();
-  if(activeTab===2) renderFinales();
-}
-
-function renderFixture(){
-  const { grupos, fixtures, rondas, nGames } = fixtureData;
-  let html = '';
-
-  for(let r=0;r<rondas;r++){
-    html += `<div class="card">
-      <div class="card-header">
-        <span class="card-title">Ronda ${r+1}</span>
-        <span class="card-badge" style="background:var(--green-dim);color:var(--green)">
-          hasta ${nGames} games
-        </span>
-      </div>
-      <div class="card-body">`;
-
-    grupos.forEach((grupo, gi)=>{
-      if(r >= fixtures[gi].length) return;
-      const [j1,j2,j3,j4] = fixtures[gi][r];
-      const col = COLORES[gi % COLORES.length];
-      const jugando = new Set([j1,j2,j3,j4]);
-      const descansan = grupo.filter(p=>!jugando.has(p));
-      const key = `${gi}-${r}`;
-      const res = resultados[key] || {ga:'',gb:''};
-
-      html += `<div class="partido-row">
-        <span class="grupo-pill" style="background:${col.bg};color:${col.text}">${LETRAS[gi]}</span>
-        <div class="equipos">
-          <div class="equipo-names">
-            <strong>${j1}</strong><span class="sep">+</span><strong>${j2}</strong>
-            <span class="sep" style="margin:0 10px;color:var(--text3)">vs</span>
-            <strong>${j3}</strong><span class="sep">+</span><strong>${j4}</strong>
-          </div>
-          ${descansan.length ? `<div class="descansa-txt">Descansan: ${descansan.join(', ')}</div>` : ''}
-        </div>
-        <div class="games-wrap">
-          <input class="game-in" type="number" min="0" max="99"
-            value="${res.ga}" placeholder="—"
-            style="border-color:${col.border}"
-            oninput="setRes('${key}','ga',this.value)">
-          <span class="games-dash">—</span>
-          <input class="game-in" type="number" min="0" max="99"
-            value="${res.gb}" placeholder="—"
-            style="border-color:${col.border}"
-            oninput="setRes('${key}','gb',this.value)">
-        </div>
-      </div>`;
-    });
-
-    html += `</div></div>`;
-  }
-  document.getElementById('output').innerHTML = html;
-}
-
-function setRes(key,field,val){
-  if(!resultados[key]) resultados[key]={ga:'',gb:''};
-  resultados[key][field] = val==='' ? '' : parseInt(val)||0;
-}
-function setResFinal(key,field,val){
-  if(!resultadosFinal[key]) resultadosFinal[key]={ga:'',gb:''};
-  resultadosFinal[key][field] = val==='' ? '' : parseInt(val)||0;
-}
-
 function renderPosiciones(){
-  const { grupos } = fixtureData;
+  const {grupos} = S.state;
+  if(!grupos||!grupos.length) return noJugadores();
   const stats = calcStats();
   let html = '';
 
   grupos.forEach((grupo, gi)=>{
-    const col = COLORES[gi % COLORES.length];
+    const col = COLORES[gi%COLORES.length];
     const sorted = sortGrupo(grupo, stats);
-
-    html += `<div class="card" style="margin-bottom:12px">
-      <div class="card-header">
+    html += `<div class="card">
+      <div class="card-hdr">
         <span class="card-title">Grupo ${LETRAS[gi]}</span>
-        <span class="card-badge" style="background:${col.bg};color:${col.text};border:1px solid ${col.border}">
+        <span class="badge" style="background:${col.bg};color:${col.txt};border-color:${col.brd}">
           ${grupo.length} jugadores
         </span>
       </div>
       <table class="pos-table">
-        <thead><tr>
-          <th>Pos</th><th>Jugador</th><th>PJ</th><th>GF</th><th>GC</th><th>Dif</th><th>Pts</th>
-        </tr></thead>
+        <thead><tr><th>Pos</th><th>Jugador</th><th>PJ</th><th>GF</th><th>GC</th><th>Dif</th><th>Pts</th></tr></thead>
         <tbody>`;
-
     sorted.forEach((j,pos)=>{
-      const s = stats[j] || {pj:0,gf:0,gc:0,pts:0};
-      const dif = s.gf - s.gc;
-      const rkClass = pos===0?'gold':pos===1?'silver':'';
+      const s=stats[j]||{pj:0,gf:0,gc:0,pts:0};
+      const dif=s.gf-s.gc;
       html += `<tr>
-        <td><span class="pos-rk ${rkClass}">${pos+1}</span></td>
+        <td><span class="rk ${pos===0?'g':pos===1?'s':''}">${pos+1}</span></td>
         <td>${j}</td>
-        <td style="color:var(--text2)">${s.pj}</td>
-        <td style="color:var(--text2)">${s.gf}</td>
-        <td style="color:var(--text2)">${s.gc}</td>
-        <td class="${dif>0?'dif-pos':dif<0?'dif-neg':''}">${dif>0?'+':''}${dif}</td>
-        <td><span class="pts-val" style="color:${col.text}">${s.pts}</span></td>
+        <td style="color:var(--txt2)">${s.pj}</td>
+        <td style="color:var(--txt2)">${s.gf}</td>
+        <td style="color:var(--txt2)">${s.gc}</td>
+        <td class="${dif>0?'dif-p':dif<0?'dif-n':''}">${dif>0?'+':''}${dif}</td>
+        <td><span class="pts-val" style="color:${col.txt}">${s.pts}</span></td>
       </tr>`;
     });
     html += `</tbody></table></div>`;
   });
-  document.getElementById('output').innerHTML = html;
+  return html;
 }
 
+// ── FINALES ───────────────────────────────────────────────────────────────
 function renderFinales(){
-  const { grupos, rondasFinal, nGames } = fixtureData;
+  const {grupos, fixtures_final, config, resultados} = S.state;
+  if(!grupos||!grupos.length) return noJugadores();
   const stats = calcStats();
+  const ng = parseInt(config.games_partido)||16;
 
-  const clasificadosPorGrupo = grupos.map(g => sortGrupo(g, stats));
-
-  const copas = [
-    { nombre:'Oro',     emoji:'🥇', color:'#b97b00', bg:'rgba(255,165,0,.12)', border:'rgba(255,165,0,.3)', idx:[0,1] },
-    { nombre:'Plata',   emoji:'🥈', color:'#5e9ecc', bg:'rgba(10,132,255,.1)', border:'rgba(10,132,255,.3)', idx:[2,3] },
-    { nombre:'Medalla', emoji:'🥉', color:'#a0806a', bg:'rgba(160,128,106,.12)',border:'rgba(160,128,106,.3)', idx:[4,5] },
+  const copasDef = [
+    {id:'oro',    emoji:'🥇', label:'Copa Oro',    desc:'1° y 2° de cada grupo', color:'#b97b00', bg:'rgba(255,170,0,.1)',   brd:'rgba(255,170,0,.3)'},
+    {id:'plata',  emoji:'🥈', label:'Copa Plata',  desc:'3° y 4° de cada grupo', color:'#4da6ff', bg:'rgba(10,132,255,.1)',  brd:'rgba(10,132,255,.3)'},
+    {id:'bronce', emoji:'🥉', label:'Copa Bronce', desc:'5° y 6° de cada grupo', color:'#c4956a', bg:'rgba(196,149,106,.1)', brd:'rgba(196,149,106,.3)'},
   ];
 
   let html = '';
-  copas.forEach(({nombre,emoji,color,bg,border,idx})=>{
+  const dis = S.role!=='admin' ? 'disabled' : '';
+
+  copasDef.forEach(({id,emoji,label,desc,color,bg,brd})=>{
+    const fix = (fixtures_final||{})[id] || [];
+    if(!fix.length) return;
+
+    // Clasificados para esta copa
+    const clasificadosPorGrupo = grupos.map(g=>sortGrupo(g,stats));
+    const posMap = {oro:[0,1], plata:[2,3], bronce:[4,5]};
     const clasificados = [];
-    idx.forEach(pos=>{
-      grupos.forEach((_,gi)=>{
-        const j = clasificadosPorGrupo[gi][pos];
-        if(j) clasificados.push(j);
-      });
+    posMap[id].forEach(pos=>{
+      clasificadosPorGrupo.forEach(sg=>{ if(sg[pos]) clasificados.push(sg[pos]); });
     });
-    if(!clasificados.length) return;
 
-    const fixture = genFixture(clasificados, rondasFinal);
-
-    html += `<div class="card" style="margin-bottom:12px">
+    html += `<div class="card" style="margin-bottom:14px">
       <div class="copa-bar" style="background:${bg};color:${color}">
-        <span>${emoji} Copa ${nombre}</span>
-        <span style="font-size:12px;font-weight:400;opacity:.8">${clasificados.length} clasificados · hasta ${nGames} games</span>
+        <span>${emoji} ${label}</span>
+        <span style="font-size:12px;font-weight:400;opacity:.8">${desc} · hasta ${ng} games</span>
       </div>
-      <div class="clasificados-list">`;
+      <div class="cls-list">`;
     clasificados.forEach((j,i)=>{
-      html += `<span class="clas-chip" style="background:${bg};color:${color};border-color:${border}">${i+1}. ${j}</span>`;
+      html += `<span class="cls-chip" style="background:${bg};color:${color};border-color:${brd}">${i+1}. ${j}</span>`;
     });
-    html += `</div>
-      <table class="pos-table">
-        <thead><tr><th>Rda</th><th>Equipo A</th><th>Games</th><th>Equipo B</th><th>Descansan</th></tr></thead>
-        <tbody>`;
+    html += `</div><table class="pos-table">
+      <thead><tr><th>Rda</th><th>Equipo A</th><th>Games</th><th>Equipo B</th><th>Descansan</th></tr></thead>
+      <tbody>`;
 
-    fixture.forEach(([j1,j2,j3,j4], ri)=>{
-      const key = `${nombre}-${ri}`;
-      const res = resultadosFinal[key]||{ga:'',gb:''};
+    fix.forEach(([j1,j2,j3,j4], ri)=>{
+      const key = `final-${id}-${ri}`;
+      const res = (resultados||{})[key]||{};
+      const ga = res.ga ?? '', gb = res.gb ?? '';
       const jugando = new Set([j1,j2,j3,j4]);
       const descansan = clasificados.filter(p=>!jugando.has(p));
 
       html += `<tr>
-        <td style="color:var(--text3);font-size:12px">${ri+1}</td>
+        <td style="color:var(--txt3);font-size:12px">${ri+1}</td>
         <td style="text-align:left;font-weight:500">${j1} + ${j2}</td>
         <td>
           <div class="games-wrap" style="justify-content:center">
-            <input class="game-in" type="number" min="0" max="99" value="${res.ga}" placeholder="—"
-              style="border-color:${border};width:42px"
-              oninput="setResFinal('${key}','ga',this.value)">
-            <span class="games-dash">—</span>
-            <input class="game-in" type="number" min="0" max="99" value="${res.gb}" placeholder="—"
-              style="border-color:${border};width:42px"
-              oninput="setResFinal('${key}','gb',this.value)">
+            <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
+              style="border-color:${brd};width:42px" ${dis}
+              onchange="saveResFinal('${key}',this,'fa_${id}_${ri}')">
+            <span class="g-dash">—</span>
+            <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
+              style="border-color:${brd};width:42px" ${dis}
+              onchange="saveResFinal('${key}',this,'fb_${id}_${ri}')">
           </div>
         </td>
         <td style="text-align:left;font-weight:500">${j3} + ${j4}</td>
-        <td style="text-align:left;font-size:11px;color:var(--text3);font-style:italic">${descansan.join(', ')||'—'}</td>
+        <td style="text-align:left;font-size:11px;color:var(--txt3)">${descansan.join(', ')||'—'}</td>
       </tr>`;
     });
     html += `</tbody></table></div>`;
   });
-
-  document.getElementById('output').innerHTML = html || '<div class="empty"><div class="empty-txt">No hay suficientes jugadores para armar las copas.</div></div>';
+  return html || `<div class="empty"><div class="empty-ico">⏳</div>
+    <div style="font-size:14px;margin-top:8px">Las finales se arman cuando haya resultados de la fase preliminar.</div></div>`;
 }
 
-// ── Init ──
-document.getElementById('p-canchas').addEventListener('input', renderPlayers);
-document.getElementById('p-games').addEventListener('input', updateHint);
-renderPlayers();
-generate();
+// ── CONFIG (admin) ─────────────────────────────────────────────────────────
+function renderConfig(){
+  const cfg = S.state.config || {};
+  const s   = S.state.sugerencia || {};
+  return `<div class="card">
+    <div class="card-hdr"><span class="card-title">⚙️ Configuración del torneo</span></div>
+    <div style="padding:16px;display:grid;gap:10px">
+      <div class="param-row">
+        <span class="param-lbl">Nombre del torneo</span>
+        <input class="p-in" id="cfg-nombre" style="width:180px;text-align:left" value="${cfg.torneo_nombre||'Super Americano'}">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Canchas / grupos</span>
+        <input class="p-in" id="cfg-canchas" type="number" min="1" max="8" value="${cfg.canchas||3}" oninput="updateSug()">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Rondas preliminar</span>
+        <input class="p-in" id="cfg-rondas" type="number" min="1" max="15" value="${cfg.rondas_prel||7}">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Rondas finales</span>
+        <input class="p-in" id="cfg-rondas-f" type="number" min="1" max="10" value="${cfg.rondas_final||5}">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Games por partido</span>
+        <input class="p-in" id="cfg-games" type="number" min="4" max="40" value="${cfg.games_partido||16}" oninput="updateSug()">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Tiempo de cancha (min)</span>
+        <input class="p-in" id="cfg-tiempo" type="number" min="30" max="240" value="${cfg.tiempo_cancha||90}" oninput="updateSug()">
+      </div>
+      <div class="hint-box" id="cfg-sug" style="line-height:1.7">
+        ⏱ Con <strong>${cfg.tiempo_cancha||90} min</strong> y ${s.n_x_grupo||6} jug/grupo:<br>
+        Máx sin repetir compañero: <strong>${s.rondas_max_sin_repetir||5} rondas</strong><br>
+        Por tiempo: <strong>${s.rondas_prel_x_tiempo||'?'}</strong> rondas disponibles<br>
+        → Sugerido: <strong>${s.rondas_prel||'?'} prelim</strong> + ${s.rondas_final||4} final · ~${s.tiempo_total_est||'?'} min total
+      </div>
+      <button class="btn-main" onclick="saveConfig()">Guardar configuración</button>
+    </div>
+  </div>`;
+}
+
+async function updateSug(){
+  const t = document.getElementById('cfg-tiempo')?.value||90;
+  const g = document.getElementById('cfg-games')?.value||16;
+  const res = await fetch(`/api/sugerencia?tiempo=${t}&games=${g}`);
+  const s = await res.json();
+  const el = document.getElementById('cfg-sug');
+  if(el) el.innerHTML = `⏱ Con <strong>${t} min</strong> y ${s.n_x_grupo} jug/grupo:<br>
+    Máx sin repetir: <strong>${s.rondas_max_sin_repetir} rondas</strong> · Por tiempo: ${s.rondas_prel_x_tiempo}<br>
+    → Sugerido: <strong>${s.rondas_prel} prelim</strong> + ${s.rondas_final} final · ~${s.tiempo_total_est} min total`;
+}
+
+async function saveConfig(){
+  const body = {
+    password: S.password,
+    config: {
+      torneo_nombre:  document.getElementById('cfg-nombre').value,
+      canchas:        document.getElementById('cfg-canchas').value,
+      rondas_prel:    document.getElementById('cfg-rondas').value,
+      rondas_final:   document.getElementById('cfg-rondas-f').value,
+      games_partido:  document.getElementById('cfg-games').value,
+      tiempo_cancha:  document.getElementById('cfg-tiempo').value,
+    }
+  };
+  const res = await api('/api/config', body);
+  if(res.ok) toast('✓ Configuración guardada');
+}
+
+// ── JUGADORES (admin) ──────────────────────────────────────────────────────
+function renderJugadores(){
+  const {jugadores, config} = S.state;
+  const nc = parseInt(config.canchas)||3;
+
+  // Inicializar lista editable si está vacía o desincronizada
+  if(!S.jugadores_edit.length){
+    if(jugadores && jugadores.length){
+      S.jugadores_edit = jugadores.map(j=>({...j}));
+    } else {
+      S.jugadores_edit = Array.from({length:18},(_,i)=>({nombre:'',grupo:Math.floor(i/(Math.round(18/nc))),orden:i}));
+    }
+  }
+
+  // Agrupar para display
+  const grupos = {};
+  S.jugadores_edit.forEach((j,i)=>{
+    const g = j.grupo ?? 0;
+    if(!grupos[g]) grupos[g]=[];
+    grupos[g].push({...j, _idx:i});
+  });
+
+  let html = `<div class="card">
+    <div class="card-hdr">
+      <span class="card-title">👥 Jugadores</span>
+      <div style="display:flex;gap:6px">
+        <button class="badge" style="background:var(--amber-d);color:var(--amber);cursor:pointer;border:none" onclick="shuffleJugadores()">🔀 Sortear</button>
+        <button class="badge" style="background:var(--green-d);color:var(--green);cursor:pointer;border:none" onclick="saveJugadores()">💾 Guardar</button>
+      </div>
+    </div>
+    <div style="padding:14px">
+      <div style="font-size:12px;color:var(--txt2);margin-bottom:12px">
+        Escribí los nombres. El grupo se asigna automáticamente según el orden.<br>
+        Después de sortear podés ajustar el grupo de cada jugador.
+      </div>`;
+
+  // Lista plana de inputs
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">`;
+  S.jugadores_edit.forEach((j,i)=>{
+    const col = COLORES[(j.grupo||0) % COLORES.length];
+    html += `<div class="jug-row">
+      <span class="jug-num">${i+1}</span>
+      <span class="jug-dot" style="background:${col.txt}"></span>
+      <input class="jug-in" type="text" value="${j.nombre||''}" placeholder="Jugador ${i+1}"
+        oninput="S.jugadores_edit[${i}].nombre=this.value">
+      <select class="grp-sel" onchange="S.jugadores_edit[${i}].grupo=+this.value;renderTab()">
+        ${Array.from({length:nc},(_,g)=>`<option value="${g}" ${(j.grupo||0)===g?'selected':''}>${LETRAS[g]}</option>`).join('')}
+      </select>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // Botones agregar/quitar
+  html += `<div style="display:flex;gap:8px">
+    <button class="btn-sec" onclick="addJug()">+ Agregar jugador</button>
+    <button class="btn-sec" onclick="removeJug()">− Quitar último</button>
+  </div>`;
+
+  html += `</div></div>`;
+  return html;
+}
+
+function addJug(){
+  const nc = parseInt(S.state?.config?.canchas)||3;
+  const n = S.jugadores_edit.length;
+  const tam = Math.max(4, Math.round((n+1)/nc));
+  S.jugadores_edit.push({nombre:'', grupo:Math.floor(n/tam), orden:n});
+  renderTab();
+}
+function removeJug(){
+  if(S.jugadores_edit.length>4){ S.jugadores_edit.pop(); renderTab(); }
+}
+
+async function shuffleJugadores(){
+  const nombres = S.jugadores_edit.map(j=>j.nombre).filter(n=>n.trim());
+  if(!nombres.length){ toast('Ingresá nombres primero'); return; }
+  const res = await api('/api/shuffle', {password:S.password, nombres});
+  if(res.ok){
+    S.jugadores_edit = [];  // forzar re-sync desde estado
+    toast('🔀 Grupos sorteados');
+  }
+}
+
+async function saveJugadores(){
+  const jugadores = S.jugadores_edit
+    .filter(j=>j.nombre.trim())
+    .map((j,i)=>({nombre:j.nombre.trim(), grupo:j.grupo||0, orden:i}));
+  const res = await api('/api/jugadores', {password:S.password, jugadores});
+  if(res.ok){ S.jugadores_edit=[]; toast('✓ Jugadores guardados'); }
+}
+
+// ── RESET ─────────────────────────────────────────────────────────────────
+function confirmReset(){
+  if(confirm('¿Empezar nuevo torneo? Se borran todos los puntajes y jugadores.')){
+    api('/api/reset', {password:S.password}).then(r=>{ if(r.ok){ S.jugadores_edit=[]; toast('Torneo reseteado'); } });
+  }
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function showLogin(){
+  if(S.role==='admin'){ S.role='viewer'; S.password=''; updateRoleUI(); return; }
+  document.getElementById('login-wrap').style.display='flex';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').textContent='';
+  setTimeout(()=>document.getElementById('login-pass').focus(),50);
+}
+function hideLogin(){
+  document.getElementById('login-wrap').style.display='none';
+}
+
+async function doLogin(){
+  const pass = document.getElementById('login-pass').value;
+  const res = await fetch('/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({password:pass})});
+  if(res.ok){
+    S.role='admin'; S.password=pass;
+    hideLogin(); updateRoleUI(); renderTab();
+    toast('✓ Modo admin activado');
+  } else {
+    document.getElementById('login-err').textContent='Contraseña incorrecta';
+  }
+}
+
+function updateRoleUI(){
+  const badge = document.getElementById('role-badge');
+  const adminSec = document.getElementById('sidebar-admin');
+  const loginBtn = document.querySelector('.hdr-right .btn-ghost');
+  if(S.role==='admin'){
+    badge.textContent='Admin'; badge.className='role-badge role-admin';
+    adminSec.style.display='block';
+    if(loginBtn) loginBtn.textContent='Salir admin';
+  } else {
+    badge.textContent='Viewer'; badge.className='role-badge role-viewer';
+    adminSec.style.display='none';
+    if(loginBtn) loginBtn.textContent='Admin';
+  }
+}
+
+// ── API helper ─────────────────────────────────────────────────────────────
+async function api(path, body){
+  try {
+    const res = await fetch(path,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+    if(!res.ok){ const e=await res.json(); toast('Error: '+(e.detail||res.status)); return {ok:false}; }
+    return await res.json();
+  } catch(e){ toast('Error de conexión'); return {ok:false}; }
+}
+
+// ── UTILS ──────────────────────────────────────────────────────────────────
+function noJugadores(){
+  return `<div class="empty"><div class="empty-ico">👥</div>
+    <div style="font-size:14px;margin-top:8px">No hay jugadores cargados.</div></div>`;
+}
+
+let _toastTimer;
+function toast(msg){
+  document.querySelectorAll('.toast').forEach(e=>e.remove());
+  const el=document.createElement('div');
+  el.className='toast'; el.textContent=msg;
+  document.body.appendChild(el);
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.remove(), 2500);
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+
+// Aplica estado sin romper inputs con foco (admin ingresando games)
+function applyStateSafe(data){
+  S.state = data;
+  const focused = document.activeElement;
+  const skip = focused && focused.classList.contains('g-in');
+  applyState(data, skip);
+}
+
+// Cambia grupo de un jugador sin re-renderizar toda la lista
+function changeGrupo(idx, grupo){
+  S.jugadores_edit[idx].grupo = grupo;
+  const rows = document.querySelectorAll('.jug-row');
+  if(rows[idx]){
+    const dot = rows[idx].querySelector('.jug-dot');
+    if(dot) dot.style.background = COLORES[grupo % COLORES.length].txt;
+  }
+}
+
+connectWS();
 </script>
 </body>
 </html>
