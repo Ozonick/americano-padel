@@ -117,22 +117,55 @@ manager = ConnectionManager()
 
 # ── Helpers fixture ───────────────────────────────────────────────────────────
 def gen_fixture(grupo: list, rondas: int) -> list:
+    """
+    Genera fixture para N jugadores.
+    Primero usa todas las combinaciones únicas sin repetir compañero.
+    Si rondas > combinaciones únicas, rota desde el principio (válido en americano).
+    """
     n = len(grupo)
+    # Generar todas las combinaciones posibles sin repetir compañero
+    seen, base = set(), []
     if n == 6:
-        raw = FIXTURE_6[:rondas]
-        return [(grupo[a], grupo[b], grupo[c], grupo[d]) for a,b,c,d in raw]
-    seen, out = set(), []
-    for a in range(n):
-        for b in range(a+1, n):
-            for c in range(n):
-                for d in range(c+1, n):
-                    if a in (c,d) or b in (c,d): continue
-                    k = tuple(sorted([(min(a,b),max(a,b)), (min(c,d),max(c,d))]))
-                    if k not in seen:
-                        seen.add(k)
-                        out.append((grupo[a],grupo[b],grupo[c],grupo[d]))
-                    if len(out) >= rondas: return out
-    return out
+        # Usar fixture canónico primero (mejor balance)
+        for a,b,c,d in FIXTURE_6:
+            base.append((grupo[a], grupo[b], grupo[c], grupo[d]))
+        # Si necesitamos más, agregar combinaciones restantes
+        if rondas > len(base):
+            seen_pairs = set()
+            for a,b,c,d in FIXTURE_6:
+                seen_pairs.add(tuple(sorted((a,b))))
+                seen_pairs.add(tuple(sorted((c,d))))
+            for a in range(n):
+                for b in range(a+1,n):
+                    for c in range(n):
+                        for d in range(c+1,n):
+                            if a in (c,d) or b in (c,d): continue
+                            pa = tuple(sorted((a,b)))
+                            pc = tuple(sorted((c,d)))
+                            k = tuple(sorted([pa,pc]))
+                            if k not in seen and pa not in seen_pairs and pc not in seen_pairs:
+                                seen.add(k)
+                                base.append((grupo[a],grupo[b],grupo[c],grupo[d]))
+    else:
+        for a in range(n):
+            for b in range(a+1,n):
+                for c in range(n):
+                    for d in range(c+1,n):
+                        if a in (c,d) or b in (c,d): continue
+                        k = tuple(sorted([(min(a,b),max(a,b)),(min(c,d),max(c,d))]))
+                        if k not in seen:
+                            seen.add(k)
+                            base.append((grupo[a],grupo[b],grupo[c],grupo[d]))
+
+    if rondas <= len(base):
+        return base[:rondas]
+
+    # Si pedimos más rondas que combinaciones únicas → ciclar desde el principio
+    # Esto es válido en americano (se repiten parejas pero no consecutivamente)
+    result = []
+    for i in range(rondas):
+        result.append(base[i % len(base)])
+    return result
 
 def calcular_rondas_sugeridas(tiempo_min: int, games_partido: int,
                               n_jugadores: int = 18, n_canchas: int = 3) -> dict:
