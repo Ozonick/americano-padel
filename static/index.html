@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Super Americano 🎾</title>
+<title>Panteras Pádel 🐆</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -11,9 +11,9 @@
   --bg:#0f0f0f; --surf:#1a1a1a; --surf2:#222; --surf3:#2a2a2a;
   --brd:rgba(255,255,255,0.08); --brd2:rgba(255,255,255,0.14);
   --txt:#f0f0f0; --txt2:#888; --txt3:#444;
-  --green:#4cd964; --green-d:rgba(76,217,100,0.12);
+  --green:#29ABE2; --green-d:rgba(41,171,226,0.15);
   --blue:#0a84ff;  --blue-d:rgba(10,132,255,0.12);
-  --amber:#ffaa00; --amber-d:rgba(255,170,0,0.12);
+  --amber:#FFD700; --amber-d:rgba(255,215,0,0.15);
   --red:#ff453a;   --red-d:rgba(255,69,58,0.12);
   --r:10px; --rsm:6px;
 }
@@ -25,16 +25,16 @@ input{font-family:'DM Sans',sans-serif}
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--brd);
   position:sticky;top:0;background:rgba(15,15,15,.94);backdrop-filter:blur(14px);z-index:100}
-.hdr-logo{width:34px;height:34px;background:var(--green);border-radius:9px;
+.hdr-logo{width:34px;height:34px;background:transparent;border-radius:9px;
   display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
 .hdr-name{font-size:16px;font-weight:600}
 .hdr-sub{font-size:11px;color:var(--txt2)}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
 .role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
-.role-admin{background:var(--green-d);color:var(--green)}
+.role-admin{background:rgba(41,171,226,.15);color:#29ABE2}
 .role-viewer{background:var(--surf2);color:var(--txt2)}
 .ws-dot{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex-shrink:0}
-.ws-dot.ok{background:var(--green)}
+.ws-dot.ok{background:#29ABE2}
 
 /* ── LAYOUT ── */
 .layout{display:flex;min-height:calc(100vh - 61px)}
@@ -58,11 +58,11 @@ input{font-family:'DM Sans',sans-serif}
 .p-in{width:58px;background:var(--surf3);border:1px solid var(--brd2);border-radius:5px;
   color:var(--txt);font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
   text-align:center;padding:4px;outline:none}
-.p-in:focus{border-color:var(--green)}
-.hint-box{background:var(--green-d);border:1px solid rgba(76,217,100,.2);
-  border-radius:var(--rsm);padding:10px 12px;font-size:12px;color:var(--green);margin-top:8px;line-height:1.6}
+.p-in:focus{border-color:#29ABE2}
+.hint-box{background:rgba(41,171,226,.1);border:1px solid rgba(41,171,226,.25);
+  border-radius:var(--rsm);padding:10px 12px;font-size:12px;color:#29ABE2;margin-top:8px;line-height:1.6}
 .btn-main{width:100%;padding:10px;background:var(--green);border:none;border-radius:var(--r);
-  color:#000;font-size:14px;font-weight:600;margin-top:6px;transition:opacity .15s}
+  color:#0a0a0a;font-size:14px;font-weight:600;margin-top:6px;transition:opacity .15s}
 .btn-main:hover{opacity:.85}
 .btn-sec{width:100%;padding:8px;background:var(--surf2);border:1px solid var(--brd);
   border-radius:var(--rsm);color:var(--txt2);font-size:13px;margin-top:5px;transition:all .15s}
@@ -104,7 +104,7 @@ input{font-family:'DM Sans',sans-serif}
 .g-in{width:46px;background:var(--surf3);border:1px solid var(--brd2);border-radius:var(--rsm);
   color:var(--txt);font-family:'DM Mono',monospace;font-size:16px;font-weight:600;
   text-align:center;padding:6px 4px;outline:none;transition:border-color .15s}
-.g-in:focus{box-shadow:0 0 0 3px rgba(76,217,100,.12)}
+.g-in:focus{box-shadow:0 0 0 3px rgba(41,171,226,.15)}
 .g-in:disabled{opacity:.4;cursor:not-allowed}
 .g-dash{color:var(--txt3);font-size:13px}
 .pts-chip{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px}
@@ -151,7 +151,7 @@ input{font-family:'DM Sans',sans-serif}
 .login-sub{font-size:13px;color:var(--txt2);margin-bottom:24px}
 .login-in{width:100%;background:var(--surf2);border:1px solid var(--brd2);border-radius:var(--rsm);
   color:var(--txt);font-size:15px;padding:10px 14px;outline:none;margin-bottom:10px;text-align:center}
-.login-in:focus{border-color:var(--green)}
+.login-in:focus{border-color:#29ABE2}
 .login-err{font-size:12px;color:var(--red);margin-top:6px;min-height:16px}
 .btn-ghost{background:transparent;border:1px solid var(--brd);border-radius:var(--rsm);
   color:var(--txt2);font-size:13px;padding:7px 16px;margin-top:8px}
@@ -159,7 +159,7 @@ input{font-family:'DM Sans',sans-serif}
 /* ── EMPTY / LOADING ── */
 .empty{text-align:center;padding:60px 20px;color:var(--txt3)}
 .empty-ico{font-size:40px;margin-bottom:10px}
-.spinner{width:24px;height:24px;border:2px solid var(--brd);border-top-color:var(--green);
+.spinner{width:24px;height:24px;border:2px solid var(--brd);border-top-color:#29ABE2;
   border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -195,9 +195,11 @@ input{font-family:'DM Sans',sans-serif}
 <!-- HEADER -->
 <header class="hdr">
   <button class="mob-menu" onclick="toggleSidebar()">☰</button>
-  <div class="hdr-logo">🎾</div>
+  <div class="hdr-logo" style="width:40px;height:40px">
+    <img src="/static/panteras.png" style="width:40px;height:40px;object-fit:contain;border-radius:6px" alt="Panteras">
+  </div>
   <div>
-    <div class="hdr-name" id="hdr-nombre">Super Americano</div>
+    <div class="hdr-name" id="hdr-nombre">Panteras Pádel</div>
     <div class="hdr-sub" id="hdr-sub">Cargando...</div>
   </div>
   <div class="hdr-right">
@@ -288,9 +290,9 @@ const S = {
 
 const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const COLORES = [
-  {bg:'rgba(76,217,100,.14)',  brd:'rgba(76,217,100,.35)',  txt:'#4cd964'},
-  {bg:'rgba(10,132,255,.14)',  brd:'rgba(10,132,255,.35)',  txt:'#4da6ff'},
-  {bg:'rgba(255,170,0,.14)',   brd:'rgba(255,170,0,.35)',   txt:'#ffaa00'},
+  {bg:'rgba(41,171,226,.16)',  brd:'rgba(41,171,226,.45)',  txt:'#29ABE2'},   // azul Panteras
+  {bg:'rgba(255,215,0,.16)',   brd:'rgba(255,215,0,.5)',    txt:'#D4A800'},   // amarillo Panteras
+  {bg:'rgba(255,255,255,.08)', brd:'rgba(255,255,255,.25)', txt:'#cccccc'},   // blanco/gris
   {bg:'rgba(255,69,58,.14)',   brd:'rgba(255,69,58,.35)',   txt:'#ff6b62'},
   {bg:'rgba(191,90,242,.14)',  brd:'rgba(191,90,242,.35)',  txt:'#bf5af2'},
   {bg:'rgba(100,210,255,.14)', brd:'rgba(100,210,255,.35)', txt:'#64d2ff'},
