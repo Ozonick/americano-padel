@@ -31,6 +31,8 @@ FIXTURE_6 = [(0,1,2,3),(1,3,2,4),(2,5,3,4),(3,4,5,0),(4,0,5,1),(5,3,0,1),(1,2,0,
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(title="Super Americano Pádel")
 
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
