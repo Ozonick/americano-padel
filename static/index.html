@@ -465,11 +465,11 @@ function renderFixture(){
           <div class="games-wrap">
             <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
               style="border-color:${col.brd}" ${dis}
-              onchange="saveRes('${key}',this,'a_${gi}_${r}')">
+              oninput="autoFill(this,'b_${gi}_${r}',${ng},'${key}','a_${gi}_${r}')">
             <span class="g-dash">—</span>
             <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
               style="border-color:${col.brd}" ${dis}
-              onchange="saveRes('${key}',this,'b_${gi}_${r}')">
+              oninput="autoFill(this,'a_${gi}_${r}',${ng},'${key}','b_${gi}_${r}')">
           </div>
           <div id="chips-${gi}-${r}" style="display:flex;gap:4px;font-size:11px;min-height:18px">
             ${(p1&&p2) ? `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
@@ -992,11 +992,19 @@ function renderMexicano(){
 
   // ── Partidos ronda actual ──
   if(m.partidos_actuales && m.partidos_actuales.length){
+    // Calcular quiénes descansan
+    const jugando_set = new Set(m.partidos_actuales.flatMap(p=>[p.j1,p.j2,p.j3,p.j4]));
+    const todos = (m.jugadores||[]).map(j=>j.nombre);
+    const descansan_mex = todos.filter(j=>!jugando_set.has(j));
+
     html += `<div class="card" style="margin-bottom:12px">
       <div class="card-hdr">
         <span class="card-title">Ronda ${ronda} — Partidos en juego</span>
         <span class="badge" style="background:rgba(41,171,226,.1);color:#29ABE2">hasta ${games} games</span>
-      </div>`;
+      </div>
+      ${descansan_mex.length ? `<div style="padding:6px 16px;font-size:11px;color:var(--txt3);font-style:italic;border-bottom:1px solid var(--brd)">
+        Descansan esta ronda: ${descansan_mex.join(', ')}
+      </div>` : ''}`;
 
     m.partidos_actuales.forEach(p=>{
       const ga = p.games_a ?? '', gb = p.games_b ?? '';
@@ -1019,11 +1027,11 @@ function renderMexicano(){
           <div class="games-wrap">
             <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
               style="border-color:rgba(41,171,226,.4)" ${dis}
-              onchange="mexGuardarRes('${p.id}',this,'mxa_${p.cancha}')">
+              oninput="autoFillMex(this,'mxb_${p.cancha}',${games},'${p.id}','mxa_${p.cancha}')">
             <span class="g-dash">—</span>
             <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
               style="border-color:rgba(41,171,226,.4)" ${dis}
-              onchange="mexGuardarRes('${p.id}',this,'mxb_${p.cancha}')">
+              oninput="autoFillMex(this,'mxa_${p.cancha}',${games},'${p.id}','mxb_${p.cancha}')">
           </div>
           ${p1&&p2 ? `<div style="display:flex;gap:4px;font-size:11px">
             <span class="pts-chip" style="background:rgba(41,171,226,.15);color:#29ABE2">${p1}</span>
@@ -1117,6 +1125,86 @@ async function mexReset(){
   if(!confirm('¿Reiniciar el torneo mexicano? Se borran todos los resultados.')) return;
   const res = await api('/api/mexicano/reset', {password: S.password});
   if(res.ok) toast('Torneo mexicano reiniciado');
+}
+
+// ── AUTO FILL ─────────────────────────────────────────────────────────────────
+
+function autoFill(inputA, keyB, totalGames, resKey, keyA){
+  const valA = parseInt(inputA.value);
+  if(isNaN(valA) || valA < 0) return;
+
+  // Buscar el input del otro equipo
+  const elB = document.querySelector(`input[oninput*="${keyB}"]`);
+  if(!elB) return;
+
+  // Si el valor ingresado es el máximo (ganó), el otro obtiene el resto
+  if(valA <= totalGames){
+    const valB = totalGames - valA;
+    // Solo autocompletar si B está vacío o tenía el complemento anterior
+    if(elB.value === '' || parseInt(elB.value) === totalGames - (parseInt(inputA.dataset.prev)||0)){
+      elB.value = valB;
+    }
+  }
+  inputA.dataset.prev = valA;
+
+  // Guardar si ambos tienen valor
+  const elA = inputA;
+  if(elA.value !== '' && elB.value !== ''){
+    const ga = parseInt(elA.value), gb = parseInt(elB.value);
+    // Actualizar chips visualmente
+    const parts = resKey.split('-'); // prel-gi-ri
+    const gi = parts[1], ri = parts[2];
+    const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
+    if(chipsEl){
+      const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
+      const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
+      chipsEl.innerHTML = `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
+        <span style="color:var(--txt3)">vs</span>
+        <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
+    }
+    // Guardar con debounce para no spamear requests
+    clearTimeout(elA._saveTimer);
+    elA._saveTimer = setTimeout(()=>{
+      api('/api/resultado', {
+        password: S.password,
+        id: resKey,
+        games_a: keyA.startsWith('a_') ? ga : gb,
+        games_b: keyA.startsWith('a_') ? gb : ga,
+        fase: 'prel'
+      }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
+    }, 600);
+  }
+}
+
+function autoFillMex(inputA, keyB, totalGames, resId, keyA){
+  const valA = parseInt(inputA.value);
+  if(isNaN(valA) || valA < 0) return;
+
+  const elB = document.querySelector(`input[oninput*="${keyB}"]`);
+  if(!elB) return;
+
+  if(valA <= totalGames){
+    const valB = totalGames - valA;
+    if(elB.value === '' || parseInt(elB.value) === totalGames - (parseInt(inputA.dataset.prev)||0)){
+      elB.value = valB;
+    }
+  }
+  inputA.dataset.prev = valA;
+
+  const elA = inputA;
+  if(elA.value !== '' && elB.value !== ''){
+    const ga = parseInt(elA.value), gb = parseInt(elB.value);
+    const games_a = keyA.startsWith('mxa') ? ga : gb;
+    const games_b = keyA.startsWith('mxa') ? gb : ga;
+    clearTimeout(elA._saveTimer);
+    elA._saveTimer = setTimeout(()=>{
+      api('/api/mexicano/resultado', {
+        password: S.password,
+        id: resId,
+        games_a, games_b
+      }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
+    }, 600);
+  }
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────

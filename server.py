@@ -164,6 +164,7 @@ def mex_armar_ronda(jugadores: list, ronda: int, canchas: int, stats: dict = Non
     Arma los partidos de una ronda del mexicano.
     Ronda 1: parejas random.
     Siguientes: ordenar por pts desc, emparejar 1+2 vs 3+4, etc.
+    Máximo `canchas` partidos simultáneos — el resto descansa rotando.
     """
     import random as rnd
     jug = [j for j in jugadores if j.strip()]
@@ -178,19 +179,24 @@ def mex_armar_ronda(jugadores: list, ronda: int, canchas: int, stats: dict = Non
     else:
         rnd.shuffle(jug)
 
+    # Máximo jugadores que entran en cancha = canchas * 4
+    # El resto descansa esta ronda
+    max_jugadores = canchas * 4
+    jugando = jug[:max_jugadores]
+    # descansan = jug[max_jugadores:]  # info útil para mostrar
+
     partidos = []
-    cancha = 1
-    i = 0
-    while i + 3 < n:
+    for cancha in range(1, canchas + 1):
+        i = (cancha - 1) * 4
+        if i + 3 >= len(jugando):
+            break
         pid = f"mex-{ronda}-{cancha}"
         partidos.append({
             "id": pid, "ronda": ronda, "cancha": cancha,
-            "j1": jug[i], "j2": jug[i+1],
-            "j3": jug[i+2], "j4": jug[i+3],
+            "j1": jugando[i], "j2": jugando[i+1],
+            "j3": jugando[i+2], "j4": jugando[i+3],
             "games_a": None, "games_b": None
         })
-        cancha += 1
-        i += 4
 
     with get_db() as con:
         for p in partidos:
