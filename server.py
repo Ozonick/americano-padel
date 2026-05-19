@@ -296,6 +296,10 @@ def gen_fixture(grupo: list, rondas: int) -> list:
     partidos_jugados = {i: 0 for i in idx}
     resultado = []
 
+    # Necesitamos al menos 4 jugadores para armar partidos
+    if n < 4:
+        return []
+
     for _ in range(rondas):
         candidatos = []
         for combo in _comb(idx, 4):
@@ -310,13 +314,14 @@ def gen_fixture(grupo: list, rondas: int) -> list:
                 # Prioridad 2: que jueguen los que menos partidos tienen
                 jugadores_combo = list(combo)
                 descansan = [i for i in idx if i not in jugadores_combo]
-                # Penalizar si juegan los que ya jugaron mucho
                 bal_score = max(partidos_jugados[j] for j in jugadores_combo) * 10
-                # Premiar si descansan los que más jugaron
                 desc_bonus = sum(partidos_jugados[i] for i in descansan) * -5
 
                 total = rep_score + bal_score + desc_bonus
                 candidatos.append((total, k1, k2, jugadores_combo))
+
+        if not candidatos:
+            break
 
         candidatos.sort(key=lambda x: x[0])
         total, p1, p2, jugadores_combo = candidatos[0]
