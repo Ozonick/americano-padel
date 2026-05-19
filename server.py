@@ -282,54 +282,43 @@ manager = ConnectionManager()
 # ── Helpers fixture ───────────────────────────────────────────────────────────
 def gen_fixture(grupo: list, rondas: int) -> list:
     """
-    Genera fixture para N jugadores.
-    Primero usa todas las combinaciones únicas sin repetir compañero.
-    Si rondas > combinaciones únicas, rota desde el principio (válido en americano).
+    Genera fixture minimizando repeticiones de compañeros.
+    Algoritmo greedy: en cada ronda elige el partido que minimiza
+    el total de veces que cada pareja ya jugó junta.
+    Cuando no hay combinaciones vírgenes, repite las menos usadas.
     """
+    from itertools import combinations as _comb
     n = len(grupo)
-    # Generar todas las combinaciones posibles sin repetir compañero
-    seen, base = set(), []
-    if n == 6:
-        # Usar fixture canónico primero (mejor balance)
-        for a,b,c,d in FIXTURE_6:
-            base.append((grupo[a], grupo[b], grupo[c], grupo[d]))
-        # Si necesitamos más, agregar combinaciones restantes
-        if rondas > len(base):
-            seen_pairs = set()
-            for a,b,c,d in FIXTURE_6:
-                seen_pairs.add(tuple(sorted((a,b))))
-                seen_pairs.add(tuple(sorted((c,d))))
-            for a in range(n):
-                for b in range(a+1,n):
-                    for c in range(n):
-                        for d in range(c+1,n):
-                            if a in (c,d) or b in (c,d): continue
-                            pa = tuple(sorted((a,b)))
-                            pc = tuple(sorted((c,d)))
-                            k = tuple(sorted([pa,pc]))
-                            if k not in seen and pa not in seen_pairs and pc not in seen_pairs:
-                                seen.add(k)
-                                base.append((grupo[a],grupo[b],grupo[c],grupo[d]))
-    else:
-        for a in range(n):
-            for b in range(a+1,n):
-                for c in range(n):
-                    for d in range(c+1,n):
-                        if a in (c,d) or b in (c,d): continue
-                        k = tuple(sorted([(min(a,b),max(a,b)),(min(c,d),max(c,d))]))
-                        if k not in seen:
-                            seen.add(k)
-                            base.append((grupo[a],grupo[b],grupo[c],grupo[d]))
+    idx = list(range(n))
 
-    if rondas <= len(base):
-        return base[:rondas]
+    # Historial: cuántas veces jugó cada par de compañeros
+    companeros: dict = {}
+    resultado = []
 
-    # Si pedimos más rondas que combinaciones únicas → ciclar desde el principio
-    # Esto es válido en americano (se repiten parejas pero no consecutivamente)
-    result = []
-    for i in range(rondas):
-        result.append(base[i % len(base)])
-    return result
+    for _ in range(rondas):
+        candidatos = []
+        for combo in _comb(idx, 4):
+            a, b, c, d = combo
+            # Las 3 formas de partir 4 jugadores en 2 parejas
+            for p1, p2 in [((a,b),(c,d)), ((a,c),(b,d)), ((a,d),(b,c))]:
+                k1 = tuple(sorted(p1))
+                k2 = tuple(sorted(p2))
+                # Score = suma de repeticiones acumuladas (0 = nunca jugaron juntos)
+                score = companeros.get(k1, 0) + companeros.get(k2, 0)
+                candidatos.append((score, k1, k2))
+
+        # Elegir el partido con menor score (menos repeticiones)
+        candidatos.sort(key=lambda x: x[0])
+        score, p1, p2 = candidatos[0]
+
+        resultado.append((
+            grupo[p1[0]], grupo[p1[1]],
+            grupo[p2[0]], grupo[p2[1]]
+        ))
+        companeros[p1] = companeros.get(p1, 0) + 1
+        companeros[p2] = companeros.get(p2, 0) + 1
+
+    return resultado
 
 def calcular_rondas_sugeridas(tiempo_min: int, games_partido: int,
                               n_jugadores: int = 18, n_canchas: int = 3) -> dict:
