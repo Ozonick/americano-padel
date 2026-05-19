@@ -373,9 +373,14 @@ function updatePtsChips(data){
       const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
       const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
       if(chipsEl){
-        chipsEl.innerHTML = `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
-          <span style="color:var(--txt3)">vs</span>
-          <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
+        const chipStyle = (pts) => pts==='3pts'
+          ? 'background:#39FF14;color:#000;font-weight:800;border-radius:4px;padding:2px 8px;font-size:10px'
+          : pts==='1pt'
+          ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700;border-radius:4px;padding:2px 8px;font-size:10px'
+          : 'background:rgba(255,255,255,.08);color:#666;border-radius:4px;padding:2px 8px;font-size:10px';
+        chipsEl.innerHTML = `<span style="${chipStyle(p1)}">${p1}</span>
+          <span style="color:var(--txt3);font-size:9px">vs</span>
+          <span style="${chipStyle(p2)}">${p2}</span>`;
       }
     });
   });
@@ -489,9 +494,9 @@ function renderFixture(){
             </div>
             <div id="chips-${gi}-${r}" style="display:flex;gap:3px;font-size:10px;min-height:15px">
               ${(p1&&p2)?`
-                <span class="pts-chip" style="background:${col.bg};color:${col.txt}">${p1}</span>
-                <span style="color:var(--txt3)">vs</span>
-                <span class="pts-chip" style="background:var(--surf2);color:var(--txt2)">${p2}</span>`:''}
+                <span style="${p1==='3pts'?'background:#39FF14;color:#000;font-weight:800':p1==='1pt'?'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700':'background:rgba(255,255,255,.08);color:#666'};border-radius:4px;padding:2px 8px;font-size:10px">${p1}</span>
+                <span style="color:var(--txt3);font-size:9px">vs</span>
+                <span style="${p2==='3pts'?'background:#39FF14;color:#000;font-weight:800':p2==='1pt'?'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700':'background:rgba(255,255,255,.08);color:#666'};border-radius:4px;padding:2px 8px;font-size:10px">${p2}</span>`:''}
             </div>
           </div>
         </div>
@@ -1052,9 +1057,9 @@ function renderMexicano(){
               oninput="autoFillMex(this,'mxa_${p.cancha}',${games},'${p.id}','mxb_${p.cancha}')">
           </div>
           ${p1&&p2 ? `<div style="display:flex;gap:4px;font-size:11px">
-            <span class="pts-chip" style="background:rgba(41,171,226,.15);color:#29ABE2">${p1}</span>
-            <span style="color:var(--txt3)">vs</span>
-            <span class="pts-chip" style="background:rgba(255,215,0,.15);color:#D4A800">${p2}</span>
+            <span style="${p1==='3pts'?'background:#39FF14;color:#000;font-weight:800':p1==='1pt'?'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700':'background:rgba(255,255,255,.08);color:#666'};border-radius:4px;padding:2px 8px">${p1}</span>
+            <span style="color:var(--txt3);font-size:9px">vs</span>
+            <span style="${p2==='3pts'?'background:#39FF14;color:#000;font-weight:800':p2==='1pt'?'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700':'background:rgba(255,255,255,.08);color:#666'};border-radius:4px;padding:2px 8px">${p2}</span>
           </div>` : ''}
         </div>
       </div>`;
@@ -1176,10 +1181,14 @@ function autoFill(inputEl, otroKey, totalGames, resKey, miKey){
   if(chipsEl){
     const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
     const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
+    const cs = (pts) => pts==='3pts'
+      ? 'background:#39FF14;color:#000;font-weight:800'
+      : pts==='1pt' ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700'
+      : 'background:rgba(255,255,255,.08);color:#666';
     chipsEl.innerHTML = `
-      <span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
-      <span style="color:var(--txt3)">vs</span>
-      <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
+      <span style="${cs(p1)};border-radius:4px;padding:2px 8px;font-size:10px">${p1}</span>
+      <span style="color:var(--txt3);font-size:9px">vs</span>
+      <span style="${cs(p2)};border-radius:4px;padding:2px 8px;font-size:10px">${p2}</span>`;
   }
 
   // Guardar con debounce

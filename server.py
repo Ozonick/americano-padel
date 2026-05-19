@@ -282,34 +282,44 @@ manager = ConnectionManager()
 # ── Helpers fixture ───────────────────────────────────────────────────────────
 def gen_fixture(grupo: list, rondas: int) -> list:
     """
-    Genera fixture minimizando repeticiones de compañeros.
-    Algoritmo greedy: en cada ronda elige el partido que minimiza
-    el total de veces que cada pareja ya jugó junta.
-    Cuando no hay combinaciones vírgenes, repite las menos usadas.
+    Genera fixture balanceando dos criterios (en orden de prioridad):
+    1. Minimizar repetición de compañeros (peso 100x)
+    2. Que descansen los que más partidos jugaron (balance de participación)
+    
+    Con 6 jugadores y 7 rondas: diferencia máxima de 1 partido entre jugadores.
     """
     from itertools import combinations as _comb
     n = len(grupo)
     idx = list(range(n))
 
-    # Historial: cuántas veces jugó cada par de compañeros
     companeros: dict = {}
+    partidos_jugados = {i: 0 for i in idx}
     resultado = []
 
     for _ in range(rondas):
         candidatos = []
         for combo in _comb(idx, 4):
             a, b, c, d = combo
-            # Las 3 formas de partir 4 jugadores en 2 parejas
             for p1, p2 in [((a,b),(c,d)), ((a,c),(b,d)), ((a,d),(b,c))]:
                 k1 = tuple(sorted(p1))
                 k2 = tuple(sorted(p2))
-                # Score = suma de repeticiones acumuladas (0 = nunca jugaron juntos)
-                score = companeros.get(k1, 0) + companeros.get(k2, 0)
-                candidatos.append((score, k1, k2))
 
-        # Elegir el partido con menor score (menos repeticiones)
+                # Prioridad 1: evitar repetir compañeros (peso muy alto)
+                rep_score = (companeros.get(k1, 0) + companeros.get(k2, 0)) * 100
+
+                # Prioridad 2: que jueguen los que menos partidos tienen
+                jugadores_combo = list(combo)
+                descansan = [i for i in idx if i not in jugadores_combo]
+                # Penalizar si juegan los que ya jugaron mucho
+                bal_score = max(partidos_jugados[j] for j in jugadores_combo) * 10
+                # Premiar si descansan los que más jugaron
+                desc_bonus = sum(partidos_jugados[i] for i in descansan) * -5
+
+                total = rep_score + bal_score + desc_bonus
+                candidatos.append((total, k1, k2, jugadores_combo))
+
         candidatos.sort(key=lambda x: x[0])
-        score, p1, p2 = candidatos[0]
+        total, p1, p2, jugadores_combo = candidatos[0]
 
         resultado.append((
             grupo[p1[0]], grupo[p1[1]],
@@ -317,6 +327,8 @@ def gen_fixture(grupo: list, rondas: int) -> list:
         ))
         companeros[p1] = companeros.get(p1, 0) + 1
         companeros[p2] = companeros.get(p2, 0) + 1
+        for j in jugadores_combo:
+            partidos_jugados[j] += 1
 
     return resultado
 
