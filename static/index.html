@@ -419,72 +419,90 @@ function renderFixture(){
       <div style="font-size:14px;margin-top:8px">No hay jugadores cargados.<br>
       El admin debe configurar el torneo.</div></div>`;
 
-  const rp = parseInt(config.rondas_prel)||7;
-  const ng = parseInt(config.games_partido)||16;
-  let html = '';
+  const rp  = parseInt(config.rondas_prel)||7;
+  const ng  = parseInt(config.games_partido)||16;
+  const dis = S.role!=='admin' ? 'disabled' : '';
 
-  for(let r=0;r<rp;r++){
+  // Una columna por cancha, cada cancha muestra sus rondas
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">`;
+
+  grupos.forEach((grupo, gi)=>{
+    const col = COLORES[gi % COLORES.length];
+
     html += `<div class="card">
-      <div class="card-hdr">
-        <span class="card-title">Ronda ${r+1}</span>
-        <span class="badge" style="background:var(--green-d);color:var(--green)">hasta ${ng} games</span>
+      <div class="card-hdr" style="background:${col.bg};border-bottom:2px solid ${col.txt}40">
+        <div>
+          <span class="card-title" style="color:${col.txt}">Cancha ${gi+1} · Grupo ${LETRAS[gi]}</span>
+        </div>
+        <span class="badge" style="background:rgba(0,0,0,.25);color:${col.txt};border:none;font-size:10px">
+          hasta ${ng} games
+        </span>
+      </div>
+      <div style="padding:6px 12px 8px;background:${col.bg}55;border-bottom:1px solid ${col.txt}25">
+        <span style="font-size:11px;color:${col.txt};opacity:.85;font-weight:500">
+          ${grupo.join(' · ')}
+        </span>
       </div>`;
 
-    grupos.forEach((grupo, gi)=>{
-      if(!fixtures_prel[gi] || r >= fixtures_prel[gi].length) return;
+    for(let r=0; r<rp; r++){
+      if(!fixtures_prel[gi] || r >= fixtures_prel[gi].length) continue;
       const [j1,j2,j3,j4] = fixtures_prel[gi][r];
-      const col = COLORES[gi % COLORES.length];
       const jugando = new Set([j1,j2,j3,j4]);
       const descansan = grupo.filter(p=>!jugando.has(p));
       const key = `prel-${gi}-${r}`;
       const res = (resultados||{})[key] || {};
       const ga = res.ga ?? '';
       const gb = res.gb ?? '';
-
-      // Puntos actuales
       let p1='', p2='';
       if(ga!==''&&gb!==''){
         const a=+ga,b=+gb;
         p1=a>b?'3pts':a===b?'1pt':'0pts';
         p2=b>a?'3pts':a===b?'1pt':'0pts';
       }
+      const ok = p1!=='';
 
-      const dis = S.role!=='admin' ? 'disabled' : '';
-
-      html += `<div class="partido-row" style="border-left:4px solid ${col.txt};padding-left:12px">
-        <span class="g-pill" style="background:${col.bg};color:${col.txt};font-weight:800">${LETRAS[gi]}</span>
-        <div class="equipos">
-          <div class="e-names">
-            <strong>${j1}</strong><span class="e-sep">+</span><strong>${j2}</strong>
-            <span class="e-vs">vs</span>
-            <strong>${j3}</strong><span class="e-sep">+</span><strong>${j4}</strong>
-          </div>
-          ${descansan.length ? `<div class="descansan">Descansan: ${descansan.join(', ')}</div>` : ''}
+      html += `<div style="padding:9px 12px;border-bottom:1px solid var(--brd);
+          ${ok?'background:rgba(0,0,0,.1)':''}">
+        <div style="font-size:10px;font-weight:600;color:${col.txt};opacity:.6;
+          text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">
+          Ronda ${r+1} ${ok?'✓':''}
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          <div class="games-wrap">
-            <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
-              style="border-color:${col.brd}" ${dis}
-              oninput="autoFill(this,'b_${gi}_${r}',${ng},'${key}','a_${gi}_${r}')">
-            <span class="g-dash">—</span>
-            <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
-              style="border-color:${col.brd}" ${dis}
-              oninput="autoFill(this,'a_${gi}_${r}',${ng},'${key}','b_${gi}_${r}')">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;line-height:1.5">
+              ${j1} + ${j2}
+              <span style="color:var(--txt3);font-size:11px;font-weight:400;margin:0 4px">vs</span>
+              ${j3} + ${j4}
+            </div>
+            ${descansan.length?`<div style="font-size:10px;color:var(--txt3);font-style:italic;margin-top:2px">
+              Descansan: ${descansan.join(', ')}</div>`:''}
           </div>
-          <div id="chips-${gi}-${r}" style="display:flex;gap:4px;font-size:11px;min-height:18px">
-            ${(p1&&p2) ? `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
-            <span style="color:var(--txt3)">vs</span>
-            <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>` : ''}
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+            <div class="games-wrap">
+              <input class="g-in" type="number" min="0" max="${ng}" value="${ga}" placeholder="—"
+                style="border-color:${col.brd};width:40px;font-size:14px" ${dis}
+                oninput="autoFill(this,'b_${gi}_${r}',${ng},'${key}','a_${gi}_${r}')">
+              <span class="g-dash">—</span>
+              <input class="g-in" type="number" min="0" max="${ng}" value="${gb}" placeholder="—"
+                style="border-color:${col.brd};width:40px;font-size:14px" ${dis}
+                oninput="autoFill(this,'a_${gi}_${r}',${ng},'${key}','b_${gi}_${r}')">
+            </div>
+            <div id="chips-${gi}-${r}" style="display:flex;gap:3px;font-size:10px;min-height:15px">
+              ${(p1&&p2)?`
+                <span class="pts-chip" style="background:${col.bg};color:${col.txt}">${p1}</span>
+                <span style="color:var(--txt3)">vs</span>
+                <span class="pts-chip" style="background:var(--surf2);color:var(--txt2)">${p2}</span>`:''}
+            </div>
           </div>
         </div>
       </div>`;
-    });
-
+    }
     html += `</div>`;
-  }
+  });
+
+  html += `</div>`;
   return html;
 }
-
 async function saveRes(key, inputEl, pairKey){
   if(S.role !== 'admin') return;
   // Buscar el par (a y b) del mismo partido
@@ -1129,82 +1147,83 @@ async function mexReset(){
 
 // ── AUTO FILL ─────────────────────────────────────────────────────────────────
 
-function autoFill(inputA, keyB, totalGames, resKey, keyA){
-  const valA = parseInt(inputA.value);
-  if(isNaN(valA) || valA < 0) return;
+function autoFill(inputEl, otroKey, totalGames, resKey, miKey){
+  const val = parseInt(inputEl.value);
+  if(isNaN(val) || val < 0 || val > totalGames) return;
 
-  // Buscar el input del otro equipo
-  const elB = document.querySelector(`input[oninput*="${keyB}"]`);
-  if(!elB) return;
-
-  // Si el valor ingresado es el máximo (ganó), el otro obtiene el resto
-  if(valA <= totalGames){
-    const valB = totalGames - valA;
-    // Solo autocompletar si B está vacío o tenía el complemento anterior
-    if(elB.value === '' || parseInt(elB.value) === totalGames - (parseInt(inputA.dataset.prev)||0)){
-      elB.value = valB;
-    }
+  // Completar el otro campo con el resto
+  const elOtro = document.querySelector(`input[oninput*="${otroKey}"]`);
+  if(elOtro && elOtro !== document.activeElement){
+    elOtro.value = totalGames - val;
   }
-  inputA.dataset.prev = valA;
 
-  // Guardar si ambos tienen valor
-  const elA = inputA;
-  if(elA.value !== '' && elB.value !== ''){
-    const ga = parseInt(elA.value), gb = parseInt(elB.value);
-    // Actualizar chips visualmente
-    const parts = resKey.split('-'); // prel-gi-ri
-    const gi = parts[1], ri = parts[2];
-    const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
-    if(chipsEl){
-      const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
-      const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
-      chipsEl.innerHTML = `<span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
-        <span style="color:var(--txt3)">vs</span>
-        <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
-    }
-    // Guardar con debounce para no spamear requests
-    clearTimeout(elA._saveTimer);
-    elA._saveTimer = setTimeout(()=>{
-      api('/api/resultado', {
-        password: S.password,
-        id: resKey,
-        games_a: keyA.startsWith('a_') ? ga : gb,
-        games_b: keyA.startsWith('a_') ? gb : ga,
-        fase: 'prel'
-      }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
-    }, 600);
+  // Leer ambos valores actuales
+  const elA = miKey.startsWith('a_')
+    ? inputEl
+    : document.querySelector(`input[oninput*="${otroKey}"]`);
+  const elB = miKey.startsWith('a_')
+    ? document.querySelector(`input[oninput*="${otroKey}"]`)
+    : inputEl;
+
+  if(!elA || !elB || elA.value==='' || elB.value==='') return;
+
+  const ga = parseInt(elA.value), gb = parseInt(elB.value);
+
+  // Actualizar chips visualmente sin esperar al server
+  const parts = resKey.split('-'); // prel-gi-ri
+  const gi = parts[1], ri = parts[2];
+  const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
+  if(chipsEl){
+    const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
+    const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
+    chipsEl.innerHTML = `
+      <span class="pts-chip" style="background:var(--green-d);color:var(--green)">${p1}</span>
+      <span style="color:var(--txt3)">vs</span>
+      <span class="pts-chip" style="background:var(--blue-d);color:var(--blue)">${p2}</span>`;
   }
+
+  // Guardar con debounce
+  clearTimeout(inputEl._saveTimer);
+  inputEl._saveTimer = setTimeout(()=>{
+    api('/api/resultado', {
+      password: S.password,
+      id: resKey,
+      games_a: ga,
+      games_b: gb,
+      fase: 'prel'
+    }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
+  }, 600);
 }
 
-function autoFillMex(inputA, keyB, totalGames, resId, keyA){
-  const valA = parseInt(inputA.value);
-  if(isNaN(valA) || valA < 0) return;
+function autoFillMex(inputEl, otroKey, totalGames, resId, miKey){
+  const val = parseInt(inputEl.value);
+  if(isNaN(val) || val < 0 || val > totalGames) return;
 
-  const elB = document.querySelector(`input[oninput*="${keyB}"]`);
-  if(!elB) return;
-
-  if(valA <= totalGames){
-    const valB = totalGames - valA;
-    if(elB.value === '' || parseInt(elB.value) === totalGames - (parseInt(inputA.dataset.prev)||0)){
-      elB.value = valB;
-    }
+  const elOtro = document.querySelector(`input[oninput*="${otroKey}"]`);
+  if(elOtro && elOtro !== document.activeElement){
+    elOtro.value = totalGames - val;
   }
-  inputA.dataset.prev = valA;
 
-  const elA = inputA;
-  if(elA.value !== '' && elB.value !== ''){
-    const ga = parseInt(elA.value), gb = parseInt(elB.value);
-    const games_a = keyA.startsWith('mxa') ? ga : gb;
-    const games_b = keyA.startsWith('mxa') ? gb : ga;
-    clearTimeout(elA._saveTimer);
-    elA._saveTimer = setTimeout(()=>{
-      api('/api/mexicano/resultado', {
-        password: S.password,
-        id: resId,
-        games_a, games_b
-      }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
-    }, 600);
-  }
+  const elA = miKey.startsWith('mxa')
+    ? inputEl
+    : document.querySelector(`input[oninput*="${otroKey}"]`);
+  const elB = miKey.startsWith('mxa')
+    ? document.querySelector(`input[oninput*="${otroKey}"]`)
+    : inputEl;
+
+  if(!elA || !elB || elA.value==='' || elB.value==='') return;
+
+  const ga = parseInt(elA.value), gb = parseInt(elB.value);
+
+  clearTimeout(inputEl._saveTimer);
+  inputEl._saveTimer = setTimeout(()=>{
+    api('/api/mexicano/resultado', {
+      password: S.password,
+      id: resId,
+      games_a: ga,
+      games_b: gb,
+    }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
+  }, 600);
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
