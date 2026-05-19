@@ -226,6 +226,9 @@ input{font-family:'DM Sans',sans-serif}
     <button class="nav-btn" id="nav-finales" onclick="setTab('finales')">
       <span class="nav-icon">⚡</span> Finales
     </button>
+    <button class="nav-btn" id="nav-mexicano" onclick="setTab('mexicano')">
+      <span class="nav-icon">🇲🇽</span> Mexicano
+    </button>
   </div>
 
   <div class="s-sec" id="sidebar-admin" style="display:none">
@@ -286,6 +289,7 @@ const S = {
   state: null,       // último estado del servidor
   ws: null,
   jugadores_edit: [], // copia editable en el panel jugadores
+  mex: null,         // estado del modo mexicano
 };
 
 const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -313,6 +317,10 @@ function connectWS(){
     const data = JSON.parse(e.data);
     if(data.type === 'state'){
       applyStateSafe(data);
+    }
+    if(data.type === 'mexicano_state'){
+      S.mex = data;
+      if(S.tab === 'mexicano') renderTab();
     }
   };
   ws.onclose = () => {
@@ -376,7 +384,7 @@ function updatePtsChips(data){
 // ── Tabs ───────────────────────────────────────────────────────────────────
 function setTab(tab){
   S.tab = tab;
-  ['fixture','posiciones','finales','config','jugadores'].forEach(t=>{
+  ['fixture','posiciones','finales','mexicano','config','jugadores'].forEach(t=>{
     const el = document.getElementById(`nav-${t}`);
     if(el) el.classList.toggle('active', t===tab);
   });
@@ -393,6 +401,7 @@ function renderTab(){
   if(S.tab==='fixture')     el.innerHTML = renderFixture();
   if(S.tab==='posiciones')  el.innerHTML = renderPosiciones();
   if(S.tab==='finales')     el.innerHTML = renderFinales();
+  if(S.tab==='mexicano')    el.innerHTML = renderMexicano();
   if(S.tab==='config')      el.innerHTML = S.role==='admin' ? renderConfig()    : noAccess();
   if(S.tab==='jugadores')   el.innerHTML = S.role==='admin' ? renderJugadores() : noAccess();
 }
@@ -896,6 +905,218 @@ function toggleSidebar(){
 function closeSidebar(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
+}
+
+// ── MEXICANO ──────────────────────────────────────────────────────────────────
+
+async function loadMexState(){
+  try {
+    const res = await fetch('/api/mexicano/state');
+    S.mex = await res.json();
+  } catch(e){ S.mex = null; }
+}
+
+function renderMexicano(){
+  if(!S.mex) {
+    loadMexState().then(renderTab);
+    return `<div class="empty"><div class="spinner"></div></div>`;
+  }
+  const m = S.mex;
+  const cfg = m.config || {};
+  const estado = cfg.estado || 'idle';
+  const ronda = m.ronda_actual || 0;
+  const rondas = m.rondas_total || 7;
+  const games = parseInt(cfg.games) || 16;
+  const dis = S.role !== 'admin' ? 'disabled' : '';
+
+  let html = '';
+
+  // ── Header con estado ──
+  html += `<div class="card" style="margin-bottom:12px">
+    <div class="card-hdr">
+      <span class="card-title">🇲🇽 Modo Mexicano</span>
+      <span class="badge" style="background:${
+        estado==='jugando'?'rgba(41,171,226,.15)':
+        estado==='finalizado'?'rgba(76,217,100,.15)':
+        'var(--surf3)'};color:${
+        estado==='jugando'?'#29ABE2':
+        estado==='finalizado'?'#4cd964':
+        'var(--txt2)'}">
+        ${estado==='idle'?'Sin iniciar':estado==='jugando'?`Ronda ${ronda} / ${rondas}`:'🏆 Finalizado'}
+      </span>
+    </div>`;
+
+  // ── Config (solo admin, solo si idle) ──
+  if(S.role === 'admin' && estado === 'idle'){
+    html += `<div style="padding:14px;display:grid;gap:8px">
+      <div class="param-row">
+        <span class="param-lbl">Canchas simultáneas</span>
+        <input class="p-in" id="mex-canchas" type="number" min="1" max="8" value="${cfg.canchas||3}">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Cantidad de rondas</span>
+        <input class="p-in" id="mex-rondas" type="number" min="1" max="20" value="${cfg.rondas||7}">
+      </div>
+      <div class="param-row">
+        <span class="param-lbl">Games por partido</span>
+        <input class="p-in" id="mex-games" type="number" min="4" max="40" value="${cfg.games||16}">
+      </div>
+      <div style="font-size:11px;color:var(--txt2);padding:0 2px">
+        Usa los mismos jugadores cargados en la pestaña Jugadores.
+        La primera ronda se sortea aleatoriamente. Las siguientes se arman según el ranking.
+      </div>
+      <button class="btn-main" onclick="mexGuardarConfig()">Guardar y comenzar torneo</button>
+    </div>`;
+  }
+
+  // ── Botones de control (admin, jugando) ──
+  if(S.role === 'admin' && estado === 'jugando'){
+    html += `<div style="padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid var(--brd)">
+      <button class="btn-sec" style="flex:1" onclick="mexSiguienteRonda()"
+        ${m.ronda_completa && ronda < rondas ? '' : 'disabled'}>
+        ➡️ Siguiente ronda ${ronda < rondas ? `(${ronda+1}/${rondas})` : ''}
+      </button>
+      <button class="btn-sec" style="color:var(--red)" onclick="mexReset()">🗑 Reiniciar</button>
+    </div>
+    ${!m.ronda_completa ? `<div style="padding:6px 14px;font-size:11px;color:var(--amber)">
+      ⚠️ Cargá todos los resultados de la ronda ${ronda} para avanzar
+    </div>` : ''}`;
+  }
+  html += `</div>`;
+
+  if(estado === 'idle' && S.role !== 'admin'){
+    return html + `<div class="empty"><div class="empty-ico">⏳</div>
+      <div style="font-size:14px;margin-top:8px">El admin aún no inició el torneo mexicano.</div></div>`;
+  }
+  if(estado === 'idle') return html;
+
+  // ── Partidos ronda actual ──
+  if(m.partidos_actuales && m.partidos_actuales.length){
+    html += `<div class="card" style="margin-bottom:12px">
+      <div class="card-hdr">
+        <span class="card-title">Ronda ${ronda} — Partidos en juego</span>
+        <span class="badge" style="background:rgba(41,171,226,.1);color:#29ABE2">hasta ${games} games</span>
+      </div>`;
+
+    m.partidos_actuales.forEach(p=>{
+      const ga = p.games_a ?? '', gb = p.games_b ?? '';
+      let p1='', p2='';
+      if(ga!==''&&gb!==''){
+        const a=+ga, b=+gb;
+        p1=a>b?'3pts':a===b?'1pt':'0pts';
+        p2=b>a?'3pts':a===b?'1pt':'0pts';
+      }
+      html += `<div class="partido-row" style="border-left:4px solid #29ABE2;padding-left:12px">
+        <span class="g-pill" style="background:rgba(41,171,226,.15);color:#29ABE2;font-weight:800">${p.cancha}</span>
+        <div class="equipos">
+          <div class="e-names">
+            <strong>${p.j1}</strong><span class="e-sep">+</span><strong>${p.j2}</strong>
+            <span class="e-vs">vs</span>
+            <strong>${p.j3}</strong><span class="e-sep">+</span><strong>${p.j4}</strong>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <div class="games-wrap">
+            <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
+              style="border-color:rgba(41,171,226,.4)" ${dis}
+              onchange="mexGuardarRes('${p.id}',this,'mxa_${p.cancha}')">
+            <span class="g-dash">—</span>
+            <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
+              style="border-color:rgba(41,171,226,.4)" ${dis}
+              onchange="mexGuardarRes('${p.id}',this,'mxb_${p.cancha}')">
+          </div>
+          ${p1&&p2 ? `<div style="display:flex;gap:4px;font-size:11px">
+            <span class="pts-chip" style="background:rgba(41,171,226,.15);color:#29ABE2">${p1}</span>
+            <span style="color:var(--txt3)">vs</span>
+            <span class="pts-chip" style="background:rgba(255,215,0,.15);color:#D4A800">${p2}</span>
+          </div>` : ''}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // ── Ranking acumulado ──
+  if(m.ranking && m.ranking.length){
+    html += `<div class="card">
+      <div class="card-hdr"><span class="card-title">🏆 Ranking acumulado</span></div>
+      <table class="pos-table">
+        <thead><tr><th>Pos</th><th>Jugador</th><th>PJ</th><th>GF</th><th>GC</th><th>Dif</th><th>Pts</th></tr></thead>
+        <tbody>`;
+    m.ranking.forEach((j,pos)=>{
+      const s = m.stats[j] || {pj:0,gf:0,gc:0,pts:0};
+      const dif = s.gf - s.gc;
+      html += `<tr>
+        <td><span class="rk ${pos===0?'g':pos===1?'s':''}">${pos+1}</span></td>
+        <td>${j}</td>
+        <td style="color:var(--txt2)">${s.pj}</td>
+        <td style="color:var(--txt2)">${s.gf}</td>
+        <td style="color:var(--txt2)">${s.gc}</td>
+        <td class="${dif>0?'dif-p':dif<0?'dif-n':''}">${dif>0?'+':''}${dif}</td>
+        <td><span class="pts-val" style="color:#29ABE2">${s.pts}</span></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── Finalizado ──
+  if(estado === 'finalizado'){
+    const ganador = m.ranking[0];
+    html += `<div class="card" style="margin-top:12px;border-color:#29ABE2">
+      <div style="padding:20px;text-align:center">
+        <div style="font-size:32px;margin-bottom:8px">🏆</div>
+        <div style="font-size:18px;font-weight:600;color:#29ABE2">¡Campeón!</div>
+        <div style="font-size:22px;font-weight:700;margin-top:4px">${ganador}</div>
+        <div style="font-size:13px;color:var(--txt2);margin-top:8px">
+          ${(m.stats[ganador]?.pts||0)} pts · ${(m.stats[ganador]?.gf||0)} games a favor
+        </div>
+        ${S.role==='admin'?`<button class="btn-sec" style="margin-top:12px;width:auto;padding:8px 20px"
+          onclick="mexReset()">Jugar de nuevo</button>`:''}
+      </div>
+    </div>`;
+  }
+
+  return html;
+}
+
+async function mexGuardarConfig(){
+  const canchas = document.getElementById('mex-canchas')?.value || 3;
+  const rondas  = document.getElementById('mex-rondas')?.value || 7;
+  const games   = document.getElementById('mex-games')?.value || 16;
+  const r1 = await api('/api/mexicano/config', {
+    password: S.password, canchas:+canchas, rondas:+rondas, games:+games
+  });
+  if(!r1.ok) return;
+  const r2 = await api('/api/mexicano/iniciar', {password: S.password});
+  if(r2.ok) toast('🇲🇽 Torneo mexicano iniciado');
+}
+
+async function mexGuardarRes(id, inputEl, pairKey){
+  if(S.role !== 'admin') return;
+  const cancha = pairKey.split('_')[1];
+  const elA = document.querySelector(`input[onchange*="mxa_${cancha}"]`);
+  const elB = document.querySelector(`input[onchange*="mxb_${cancha}"]`);
+  if(!elA || !elB || elA.value==='' || elB.value==='') return;
+  const res = await api('/api/mexicano/resultado', {
+    password: S.password, id,
+    games_a: parseInt(elA.value),
+    games_b: parseInt(elB.value),
+  });
+  if(res.ok) toast('✓ Guardado');
+}
+
+async function mexSiguienteRonda(){
+  const res = await api('/api/mexicano/siguiente', {password: S.password});
+  if(res.ok){
+    if(res.finalizado) toast('🏆 Torneo finalizado');
+    else toast(`➡️ Ronda ${res.ronda} iniciada`);
+  }
+}
+
+async function mexReset(){
+  if(!confirm('¿Reiniciar el torneo mexicano? Se borran todos los resultados.')) return;
+  const res = await api('/api/mexicano/reset', {password: S.password});
+  if(res.ok) toast('Torneo mexicano reiniciado');
 }
 
 // ── INIT ───────────────────────────────────────────────────────────────────
