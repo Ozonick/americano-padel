@@ -117,10 +117,11 @@ input{font-family:'DM Sans',sans-serif}
 .pos-table td{padding:10px 12px;border-bottom:1px solid var(--brd);text-align:center;font-size:13px}
 .pos-table td:nth-child(2){text-align:left;font-weight:500}
 .pos-table tr:last-child td{border-bottom:none}
-.rk{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;
-  justify-content:center;font-size:12px;font-weight:700;background:var(--surf3);color:var(--txt2)}
-.rk.g{background:rgba(255,170,0,.18);color:var(--amber)}
-.rk.s{background:rgba(10,132,255,.15);color:var(--blue)}
+.rk{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:800;background:var(--surf3);color:#aaa}
+.rk.g{background:#C9A84C;color:#000}
+.rk.s{background:#29ABE2;color:#000}
+.rk.b{background:#7a5c3e;color:#fff}
 .pts-val{font-family:'DM Mono',monospace;font-weight:600;font-size:15px}
 .dif-p{color:var(--green)} .dif-n{color:var(--red)}
 
@@ -217,9 +218,10 @@ input{font-family:'DM Sans',sans-serif}
 <aside class="sidebar" id="sidebar">
   <div class="s-sec">
     <div class="s-lbl">Vista</div>
-    <button class="nav-btn active" id="nav-fixture" onclick="setTab('fixture')">
+    <button class="nav-btn active" id="nav-fixture" onclick="setFixtureView('todas')">
       <span class="nav-icon">📋</span> Fixture
     </button>
+    <div id="submenu-canchas" style="margin-left:12px;margin-top:2px;display:flex;flex-direction:column;gap:2px"></div>
     <button class="nav-btn" id="nav-posiciones" onclick="setTab('posiciones')">
       <span class="nav-icon">🏆</span> Posiciones
     </button>
@@ -239,7 +241,12 @@ input{font-family:'DM Sans',sans-serif}
     <button class="nav-btn" id="nav-jugadores" onclick="setTab('jugadores')">
       <span class="nav-icon">👥</span> Jugadores
     </button>
-    <div style="margin-top:10px">
+    <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
+      <button class="btn-sec" id="btn-keepalive" onclick="toggleKeepAlive()"
+        style="display:flex;align-items:center;gap:8px;justify-content:center">
+        <span id="ka-dot" style="width:8px;height:8px;border-radius:50%;background:var(--txt3);flex-shrink:0"></span>
+        <span id="ka-label">Mantener activo</span>
+      </button>
       <button class="btn-danger" onclick="confirmReset()">🗑 Nuevo torneo</button>
     </div>
   </div>
@@ -290,6 +297,9 @@ const S = {
   ws: null,
   jugadores_edit: [], // copia editable en el panel jugadores
   mex: null,         // estado del modo mexicano
+  canchaVista: 'todas', // 'todas' | 0 | 1 | 2 ...
+  keepAlive: false,
+  _kaTimer: null,
 };
 
 const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -342,6 +352,25 @@ function applyState(data, skipFixtureRender=false){
   document.getElementById('p-rondas').textContent  = cfg.rondas_prel || '—';
   document.getElementById('p-rondas-f').textContent= cfg.rondas_final || '—';
   // Sugerencia
+  // Actualizar submenú de canchas dinámicamente
+  const grupos_count = (data.grupos||[]).length;
+  const submenu = document.getElementById('submenu-canchas');
+  if(submenu){
+    let sm = `<button class="nav-btn sub-cancha-btn ${S.canchaVista==='todas'?'active':''}"
+      data-cancha="todas" onclick="setFixtureView('todas')" style="font-size:12px;padding:6px 12px">
+      <span style="margin-right:6px;opacity:.5">└</span> Ver todas
+    </button>`;
+    for(let gi=0;gi<grupos_count;gi++){
+      const col = ['#29ABE2','#D4A800','#aaa','#ff6b62','#bf5af2','#64d2ff'][gi%6];
+      sm += `<button class="nav-btn sub-cancha-btn ${S.canchaVista===gi?'active':''}"
+        data-cancha="${gi}" onclick="setFixtureView(${gi})"
+        style="font-size:12px;padding:6px 12px;border-left:3px solid ${col}">
+        <span style="margin-right:6px;opacity:.5">└</span> Cancha ${gi+1}
+      </button>`;
+    }
+    submenu.innerHTML = sm;
+  }
+
   if(data.sugerencia){
     const s = data.sugerencia;
     const box = document.getElementById('hint-tiempo');
@@ -387,8 +416,21 @@ function updatePtsChips(data){
 }
 
 // ── Tabs ───────────────────────────────────────────────────────────────────
+function setFixtureView(cancha){
+  S.tab = 'fixture';
+  S.canchaVista = cancha;
+  // Actualizar submenú visual
+  document.querySelectorAll('.sub-cancha-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.cancha == String(cancha));
+  });
+  document.getElementById('nav-fixture')?.classList.add('active');
+  closeSidebar();
+  renderTab();
+}
+
 function setTab(tab){
   S.tab = tab;
+  if(tab !== 'fixture') S.canchaVista = 'todas';
   ['fixture','posiciones','finales','mexicano','config','jugadores'].forEach(t=>{
     const el = document.getElementById(`nav-${t}`);
     if(el) el.classList.toggle('active', t===tab);
@@ -428,10 +470,18 @@ function renderFixture(){
   const ng  = parseInt(config.games_partido)||16;
   const dis = S.role!=='admin' ? 'disabled' : '';
 
-  // Una columna por cancha, cada cancha muestra sus rondas
-  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px">`;
+  // Filtrar por cancha seleccionada
+  const gruposFiltrados = S.canchaVista === 'todas'
+    ? grupos.map((g,i)=>({g,i}))
+    : [{g: grupos[S.canchaVista], i: S.canchaVista}].filter(x=>x.g);
 
-  grupos.forEach((grupo, gi)=>{
+  const gridCols = S.canchaVista === 'todas'
+    ? 'repeat(auto-fit,minmax(300px,1fr))'
+    : '1fr';
+
+  let html = `<div style="display:grid;grid-template-columns:${gridCols};gap:12px">`;
+
+  gruposFiltrados.forEach(({g: grupo, i: gi})=>{
     const col = COLORES[gi % COLORES.length];
 
     html += `<div class="card">
@@ -602,7 +652,7 @@ function renderPosiciones(){
       const s=stats[j]||{pj:0,gf:0,gc:0,pts:0};
       const dif=s.gf-s.gc;
       html += `<tr>
-        <td><span class="rk ${pos===0?'g':pos===1?'s':''}">${pos+1}</span></td>
+        <td><span class="rk ${pos===0?'g':pos===1?'s':pos===2?'b':''}">${pos+1}</span></td>
         <td>${j}</td>
         <td style="color:var(--txt2)">${s.pj}</td>
         <td style="color:var(--txt2)">${s.gf}</td>
@@ -618,74 +668,164 @@ function renderPosiciones(){
 
 // ── FINALES ───────────────────────────────────────────────────────────────
 function renderFinales(){
-  const {grupos, fixtures_final, config, resultados} = S.state;
+  const {grupos, resultados} = S.state;
   if(!grupos||!grupos.length) return noJugadores();
   const stats = calcStats();
-  const ng = parseInt(config.games_partido)||16;
 
   const copasDef = [
-    {id:'oro',    emoji:'🥇', label:'Copa Oro',    desc:'1° y 2° de cada grupo', color:'#b97b00', bg:'rgba(255,170,0,.1)',   brd:'rgba(255,170,0,.3)'},
-    {id:'plata',  emoji:'🥈', label:'Copa Plata',  desc:'3° y 4° de cada grupo', color:'#4da6ff', bg:'rgba(10,132,255,.1)',  brd:'rgba(10,132,255,.3)'},
-    {id:'bronce', emoji:'🥉', label:'Copa Bronce', desc:'5° y 6° de cada grupo', color:'#c4956a', bg:'rgba(196,149,106,.1)', brd:'rgba(196,149,106,.3)'},
+    {id:'oro',    emoji:'🥇', label:'Copa Oro',    posIdx:[0,1], color:'#C9A84C', bg:'rgba(201,168,76,.12)', brd:'rgba(201,168,76,.4)'},
+    {id:'plata',  emoji:'🥈', label:'Copa Plata',  posIdx:[2,3], color:'#4da6ff', bg:'rgba(10,132,255,.1)',  brd:'rgba(10,132,255,.35)'},
+    {id:'bronce', emoji:'🥉', label:'Copa Bronce', posIdx:[4,5], color:'#c4956a', bg:'rgba(196,149,106,.12)',brd:'rgba(196,149,106,.4)'},
   ];
 
-  let html = '';
   const dis = S.role!=='admin' ? 'disabled' : '';
+  let html = '';
 
-  copasDef.forEach(({id,emoji,label,desc,color,bg,brd})=>{
-    const fix = (fixtures_final||{})[id] || [];
-    if(!fix.length) return;
-
-    // Clasificados para esta copa
+  copasDef.forEach(({id,emoji,label,posIdx,color,bg,brd})=>{
+    // Armar clasificados: 1 jugador de cada posición de cada grupo
+    // Luego rankear globalmente y formar duos (1°+2°), (3°+4°), (5°+6°)
     const clasificadosPorGrupo = grupos.map(g=>sortGrupo(g,stats));
-    const posMap = {oro:[0,1], plata:[2,3], bronce:[4,5]};
-    const clasificados = [];
-    posMap[id].forEach(pos=>{
-      clasificadosPorGrupo.forEach(sg=>{ if(sg[pos]) clasificados.push(sg[pos]); });
+    const candidatos = [];
+    posIdx.forEach(pos=>{
+      clasificadosPorGrupo.forEach(sg=>{
+        if(sg[pos]) candidatos.push(sg[pos]);
+      });
     });
+    if(!candidatos.length) return;
+
+    // Rankear candidatos por pts desc, luego dif games
+    const rankGlobal = [...candidatos].sort((a,b)=>{
+      const sa=stats[a]||{}, sb=stats[b]||{};
+      if((sb.pts||0)!==(sa.pts||0)) return (sb.pts||0)-(sa.pts||0);
+      return ((sb.gf||0)-(sb.gc||0))-((sa.gf||0)-(sa.gc||0));
+    });
+
+    // Duos: (rankGlobal[0]+rankGlobal[1]), (rankGlobal[2]+rankGlobal[3])...
+    const duos = [];
+    for(let i=0;i+1<rankGlobal.length;i+=2){
+      duos.push([rankGlobal[i], rankGlobal[i+1]]);
+    }
+
+    // Partidos round-robin entre duos
+    const partidos = [];
+    for(let i=0;i<duos.length;i++){
+      for(let j=i+1;j<duos.length;j++){
+        partidos.push({duoA: duos[i], duoB: duos[j], idx: partidos.length});
+      }
+    }
 
     html += `<div class="card" style="margin-bottom:14px">
-      <div class="copa-bar" style="background:${bg};color:${color}">
-        <span>${emoji} ${label}</span>
-        <span style="font-size:12px;font-weight:400;opacity:.8">${desc} · hasta ${ng} games</span>
-      </div>
-      <div class="cls-list">`;
-    clasificados.forEach((j,i)=>{
-      html += `<span class="cls-chip" style="background:${bg};color:${color};border-color:${brd}">${i+1}. ${j}</span>`;
-    });
-    html += `</div><table class="pos-table">
-      <thead><tr><th>Rda</th><th>Equipo A</th><th>Games</th><th>Equipo B</th><th>Descansan</th></tr></thead>
-      <tbody>`;
+      <div class="copa-bar" style="background:${bg};border-bottom:2px solid ${brd}">
+        <span style="color:${color};font-size:14px;font-weight:700">${emoji} ${label}</span>
+        <span style="font-size:11px;color:${color};opacity:.7">Round Robin · G = Ganó · P = Perdió</span>
+      </div>`;
 
-    fix.forEach(([j1,j2,j3,j4], ri)=>{
-      const key = `final-${id}-${ri}`;
-      const res = (resultados||{})[key]||{};
-      const ga = res.ga ?? '', gb = res.gb ?? '';
-      const jugando = new Set([j1,j2,j3,j4]);
-      const descansan = clasificados.filter(p=>!jugando.has(p));
-
-      html += `<tr>
-        <td style="color:var(--txt3);font-size:12px">${ri+1}</td>
-        <td style="text-align:left;font-weight:500">${j1} + ${j2}</td>
-        <td>
-          <div class="games-wrap" style="justify-content:center">
-            <input class="g-in" type="number" min="0" max="99" value="${ga}" placeholder="—"
-              style="border-color:${brd};width:42px" ${dis}
-              onchange="saveResFinal('${key}',this,'fa_${id}_${ri}')">
-            <span class="g-dash">—</span>
-            <input class="g-in" type="number" min="0" max="99" value="${gb}" placeholder="—"
-              style="border-color:${brd};width:42px" ${dis}
-              onchange="saveResFinal('${key}',this,'fb_${id}_${ri}')">
-          </div>
-        </td>
-        <td style="text-align:left;font-weight:500">${j3} + ${j4}</td>
-        <td style="text-align:left;font-size:11px;color:var(--txt3)">${descansan.join(', ')||'—'}</td>
-      </tr>`;
+    // Mostrar duos con ranking
+    html += `<div style="padding:10px 14px;border-bottom:1px solid var(--brd);display:flex;flex-wrap:wrap;gap:8px">`;
+    duos.forEach((duo,di)=>{
+      const s0=stats[duo[0]]||{}, s1=stats[duo[1]]||{};
+      const ptsTotal = (s0.pts||0)+(s1.pts||0);
+      html += `<div style="background:${bg};border:1px solid ${brd};border-radius:8px;padding:6px 12px;min-width:140px">
+        <div style="font-size:10px;font-weight:700;color:${color};letter-spacing:.06em;margin-bottom:4px">
+          DUO ${di+1} · ${ptsTotal} pts
+        </div>
+        <div style="font-size:13px;font-weight:600">${duo[0]}</div>
+        <div style="font-size:13px;font-weight:600">${duo[1]}</div>
+      </div>`;
     });
-    html += `</tbody></table></div>`;
+    html += `</div>`;
+
+    // Tabla de partidos
+    if(partidos.length){
+      html += `<table class="pos-table">
+        <thead><tr>
+          <th style="text-align:left;padding-left:14px">Duo A</th>
+          <th>Resultado</th>
+          <th style="text-align:left">Duo B</th>
+        </tr></thead><tbody>`;
+
+      partidos.forEach(({duoA,duoB,idx})=>{
+        const key = `final-${id}-${idx}`;
+        const res = (resultados||{})[key]||{};
+        const rv = res.ga;  // 1=A ganó, 2=B ganó, null=sin resultado
+
+        const btnStyle = (val) => `
+          padding:6px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;
+          border:2px solid ${rv==val?color:'var(--brd2)'};
+          background:${rv==val?bg:'transparent'};
+          color:${rv==val?color:'var(--txt2)'};
+          ${dis?'opacity:.5;cursor:not-allowed':''}`;
+
+        html += `<tr>
+          <td style="text-align:left;padding-left:14px;font-weight:500">
+            ${duoA[0]}<span style="color:var(--txt3);margin:0 4px">+</span>${duoA[1]}
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;justify-content:center;gap:8px">
+              <button style="${btnStyle(1)}" ${dis} onclick="guardarFinal('${key}',1,'${color}')">G</button>
+              <span style="color:var(--txt3);font-size:12px">vs</span>
+              <button style="${btnStyle(2)}" ${dis} onclick="guardarFinal('${key}',2,'${color}')">G</button>
+            </div>
+          </td>
+          <td style="text-align:left;font-weight:500">
+            ${duoB[0]}<span style="color:var(--txt3);margin:0 4px">+</span>${duoB[1]}
+          </td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+
+    // Tabla de posiciones de la copa
+    const copaStats = {};
+    duos.forEach(duo=>{ copaStats[duo.join('+')] = {duo, g:0, p:0}; });
+    partidos.forEach(({duoA,duoB,idx})=>{
+      const key = `final-${id}-${idx}`;
+      const rv = (resultados||{})[key]?.ga;
+      if(!rv) return;
+      const kA = duoA.join('+'), kB = duoB.join('+');
+      if(rv==1){ copaStats[kA].g++; copaStats[kB].p++; }
+      else     { copaStats[kB].g++; copaStats[kA].p++; }
+    });
+
+    const rankCopa = Object.values(copaStats).sort((a,b)=>b.g-a.g);
+    if(rankCopa.some(r=>r.g>0||r.p>0)){
+      html += `<div style="padding:10px 14px;border-top:1px solid var(--brd)">
+        <div style="font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.06em;margin-bottom:8px">POSICIONES COPA</div>
+        <div style="display:flex;flex-direction:column;gap:4px">`;
+      rankCopa.forEach((r,pos)=>{
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:5px 8px;
+            border-radius:6px;background:${pos===0?bg:'transparent'}">
+          <span style="width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;
+            justify-content:center;font-size:11px;font-weight:700;
+            background:${pos===0?color:'var(--surf3)'};color:${pos===0?'#000':'var(--txt2)'}">${pos+1}</span>
+          <span style="font-weight:500;font-size:13px">${r.duo[0]} + ${r.duo[1]}</span>
+          <span style="margin-left:auto;font-size:12px">
+            <span style="color:#39FF14;font-weight:700">${r.g}G</span>
+            <span style="color:var(--txt3);margin:0 4px">·</span>
+            <span style="color:var(--red)">${r.p}P</span>
+          </span>
+        </div>`;
+      });
+      html += `</div></div>`;
+    }
+
+    html += `</div>`;
   });
+
   return html || `<div class="empty"><div class="empty-ico">⏳</div>
-    <div style="font-size:14px;margin-top:8px">Las finales se arman cuando haya resultados de la fase preliminar.</div></div>`;
+    <div style="font-size:14px;margin-top:8px">Jugá la fase preliminar para ver las finales.</div></div>`;
+}
+
+async function guardarFinal(key, ganador, color){
+  if(S.role!=='admin') return;
+  const res = await api('/api/resultado', {
+    password: S.password,
+    id: key,
+    games_a: ganador,  // 1=A ganó, 2=B ganó
+    games_b: 0,
+    fase: 'final'
+  });
+  if(res.ok) toast(`✓ Resultado guardado`);
 }
 
 // ── CONFIG (admin) ─────────────────────────────────────────────────────────
@@ -1156,34 +1296,25 @@ function autoFill(inputEl, otroKey, totalGames, resKey, miKey){
   const val = parseInt(inputEl.value);
   if(isNaN(val) || val < 0 || val > totalGames) return;
 
-  // Completar el otro campo con el resto
+  // Siempre completar el otro campo con el complemento
   const elOtro = document.querySelector(`input[oninput*="${otroKey}"]`);
-  if(elOtro && elOtro !== document.activeElement){
-    elOtro.value = totalGames - val;
-  }
+  if(elOtro) elOtro.value = totalGames - val;
 
-  // Leer ambos valores actuales
-  const elA = miKey.startsWith('a_')
-    ? inputEl
-    : document.querySelector(`input[oninput*="${otroKey}"]`);
-  const elB = miKey.startsWith('a_')
-    ? document.querySelector(`input[oninput*="${otroKey}"]`)
-    : inputEl;
+  // ga = campo 'a_', gb = campo 'b_', indistinto de cuál tocó el usuario
+  const esA = miKey.startsWith('a_');
+  const ga = esA ? val : totalGames - val;
+  const gb = esA ? totalGames - val : val;
 
-  if(!elA || !elB || elA.value==='' || elB.value==='') return;
-
-  const ga = parseInt(elA.value), gb = parseInt(elB.value);
-
-  // Actualizar chips visualmente sin esperar al server
-  const parts = resKey.split('-'); // prel-gi-ri
+  // Chips visuales inmediatos
+  const parts = resKey.split('-');
   const gi = parts[1], ri = parts[2];
   const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
   if(chipsEl){
     const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
     const p2 = gb>ga?'3pts':ga===gb?'1pt':'0pts';
-    const cs = (pts) => pts==='3pts'
+    const cs = p => p==='3pts'
       ? 'background:#39FF14;color:#000;font-weight:800'
-      : pts==='1pt' ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700'
+      : p==='1pt' ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700'
       : 'background:rgba(255,255,255,.08);color:#666';
     chipsEl.innerHTML = `
       <span style="${cs(p1)};border-radius:4px;padding:2px 8px;font-size:10px">${p1}</span>
@@ -1191,15 +1322,12 @@ function autoFill(inputEl, otroKey, totalGames, resKey, miKey){
       <span style="${cs(p2)};border-radius:4px;padding:2px 8px;font-size:10px">${p2}</span>`;
   }
 
-  // Guardar con debounce
+  // Guardar con debounce 600ms
   clearTimeout(inputEl._saveTimer);
   inputEl._saveTimer = setTimeout(()=>{
     api('/api/resultado', {
-      password: S.password,
-      id: resKey,
-      games_a: ga,
-      games_b: gb,
-      fase: 'prel'
+      password: S.password, id: resKey,
+      games_a: ga, games_b: gb, fase: 'prel'
     }).then(r=>{ if(r.ok) toast('✓ Guardado'); });
   }, 600);
 }
@@ -1252,6 +1380,34 @@ function changeGrupo(idx, grupo){
   if(rows[idx]){
     const dot = rows[idx].querySelector('.jug-dot');
     if(dot) dot.style.background = COLORES[grupo % COLORES.length].txt;
+  }
+}
+
+// ── KEEP-ALIVE ────────────────────────────────────────────────────────────────
+async function pingServidor(){
+  try { await fetch('/api/ping'); } catch(e){}
+}
+
+function toggleKeepAlive(){
+  S.keepAlive = !S.keepAlive;
+  const dot   = document.getElementById('ka-dot');
+  const label = document.getElementById('ka-label');
+  const btn   = document.getElementById('btn-keepalive');
+  if(S.keepAlive){
+    dot.style.background   = '#39FF14';
+    label.textContent      = 'Servidor activo 🟢';
+    btn.style.borderColor  = '#39FF14';
+    btn.style.color        = '#39FF14';
+    S._kaTimer = setInterval(pingServidor, 4 * 60 * 1000); // cada 4 min
+    pingServidor();
+    toast('🟢 Servidor se mantendrá activo');
+  } else {
+    dot.style.background   = 'var(--txt3)';
+    label.textContent      = 'Mantener activo';
+    btn.style.borderColor  = '';
+    btn.style.color        = '';
+    clearInterval(S._kaTimer);
+    toast('Modo keep-alive desactivado');
   }
 }
 

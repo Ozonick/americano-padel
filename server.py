@@ -455,6 +455,11 @@ def clasificar(grupos, stats):
 async def root():
     return FileResponse(STATIC_DIR / "index.html")
 
+@app.get("/api/ping")
+async def ping():
+    """Keep-alive endpoint — evita que Render duerma el servicio."""
+    return {"ok": True, "ts": __import__("time").time()}
+
 @app.get("/api/state")
 async def get_state():
     return JSONResponse(get_full_state())
