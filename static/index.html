@@ -654,9 +654,9 @@ function renderPosiciones(){
       html += `<tr>
         <td><span class="rk ${pos===0?'g':pos===1?'s':pos===2?'b':''}">${pos+1}</span></td>
         <td>${j}</td>
-        <td style="color:var(--txt2)">${s.pj}</td>
-        <td style="color:var(--txt2)">${s.gf}</td>
-        <td style="color:var(--txt2)">${s.gc}</td>
+        <td style="color:#7a9bbf">${s.pj}</td>
+        <td style="color:#5db896">${s.gf}</td>
+        <td style="color:#c47a7a">${s.gc}</td>
         <td class="${dif>0?'dif-p':dif<0?'dif-n':''}">${dif>0?'+':''}${dif}</td>
         <td><span class="pts-val" style="color:${col.txt}">${s.pts}</span></td>
       </tr>`;
@@ -1220,9 +1220,9 @@ function renderMexicano(){
       html += `<tr>
         <td><span class="rk ${pos===0?'g':pos===1?'s':''}">${pos+1}</span></td>
         <td>${j}</td>
-        <td style="color:var(--txt2)">${s.pj}</td>
-        <td style="color:var(--txt2)">${s.gf}</td>
-        <td style="color:var(--txt2)">${s.gc}</td>
+        <td style="color:#7a9bbf">${s.pj}</td>
+        <td style="color:#5db896">${s.gf}</td>
+        <td style="color:#c47a7a">${s.gc}</td>
         <td class="${dif>0?'dif-p':dif<0?'dif-n':''}">${dif>0?'+':''}${dif}</td>
         <td><span class="pts-val" style="color:#29ABE2">${s.pts}</span></td>
       </tr>`;
@@ -1292,22 +1292,22 @@ async function mexReset(){
 
 // ── AUTO FILL ─────────────────────────────────────────────────────────────────
 
-function autoFill(inputEl, otroKey, totalGames, resKey, miKey){
+function autoFill(inputEl, otroId, totalGames, resKey, esA){
+  // otroId = id único del otro input (gin-a-GI-RI o gin-b-GI-RI)
+  // esA = true si este input es el del equipo A (izquierda)
   const val = parseInt(inputEl.value);
   if(isNaN(val) || val < 0 || val > totalGames) return;
 
-  // Siempre completar el otro campo con el complemento
-  const elOtro = document.querySelector(`input[oninput*="${otroKey}"]`);
+  // Llenar el otro campo por su id único — sin ambigüedad
+  const elOtro = document.getElementById(otroId);
   if(elOtro) elOtro.value = totalGames - val;
 
-  // ga = campo 'a_', gb = campo 'b_', indistinto de cuál tocó el usuario
-  const esA = miKey.startsWith('a_');
   const ga = esA ? val : totalGames - val;
   const gb = esA ? totalGames - val : val;
 
-  // Chips visuales inmediatos
-  const parts = resKey.split('-');
-  const gi = parts[1], ri = parts[2];
+  // Chips visuales: id del input es gin-[a|b]-GI-RI
+  const parts = inputEl.id.split('-'); // ['gin','a','GI','RI']
+  const gi = parts[2], ri = parts[3];
   const chipsEl = document.getElementById(`chips-${gi}-${ri}`);
   if(chipsEl){
     const p1 = ga>gb?'3pts':ga===gb?'1pt':'0pts';
@@ -1322,7 +1322,6 @@ function autoFill(inputEl, otroKey, totalGames, resKey, miKey){
       <span style="${cs(p2)};border-radius:4px;padding:2px 8px;font-size:10px">${p2}</span>`;
   }
 
-  // Guardar con debounce 600ms
   clearTimeout(inputEl._saveTimer);
   inputEl._saveTimer = setTimeout(()=>{
     api('/api/resultado', {
