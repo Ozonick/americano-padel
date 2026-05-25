@@ -1298,14 +1298,19 @@ function autoFill(inputEl, totalGames, resKey){
   const val = parseInt(inputEl.value);
   if(isNaN(val) || val < 0 || val > totalGames) return;
 
-  // Encontrar el otro input del mismo partido por data-pair
   const pair = inputEl.dataset.pair;
-  const side = inputEl.dataset.side;          // 'a' o 'b'
+  const side = inputEl.dataset.side;
   const otroSide = side === 'a' ? 'b' : 'a';
   const elOtro = document.querySelector(
     `input[data-pair="${pair}"][data-side="${otroSide}"]`
   );
-  if(elOtro) elOtro.value = totalGames - val;
+  console.log('[autoFill v2]', {pair, side, val, otroEncontrado: !!elOtro});
+  if(elOtro){
+    elOtro.value = totalGames - val;
+    const orig = elOtro.style.boxShadow;
+    elOtro.style.boxShadow = '0 0 0 2px #39FF14';
+    setTimeout(()=>{ elOtro.style.boxShadow = orig; }, 400);
+  }
 
   const ga = side === 'a' ? val           : totalGames - val;
   const gb = side === 'a' ? totalGames - val : val;
