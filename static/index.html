@@ -596,23 +596,26 @@ function renderFinales(){
     html+=`</div>`;
 
     if(partidos.length){
-      html+=`<table class="pos-table"><thead><tr>
-        <th style="text-align:left;padding-left:14px">Duo A</th><th>Resultado</th><th style="text-align:left">Duo B</th>
-      </tr></thead><tbody>`;
+      html+=`<div style="display:flex;flex-direction:column">`;
       partidos.forEach(({duoA,duoB,idx})=>{
         const key=`final-${id}-${idx}`,res=(resultados||{})[key]||{},rv=res.ga;
         const bs=(val)=>`padding:6px 18px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;border:2px solid ${rv==val?color:'var(--brd2)'};background:${rv==val?bg:'transparent'};color:${rv==val?color:'var(--txt2)'};${dis?'opacity:.5;cursor:not-allowed':''}`;
-        html+=`<tr>
-          <td style="text-align:left;padding-left:14px;font-weight:500">${duoA[0]}<span style="color:var(--txt3);margin:0 4px">+</span>${duoA[1]}</td>
-          <td><div style="display:flex;align-items:center;justify-content:center;gap:8px">
+        const duoNames=(duo)=>`<div style="display:flex;flex-direction:column;align-items:flex-start;gap:1px">
+            <span style="font-weight:600;font-size:13px">${duo[0]}</span>
+            <span style="color:var(--txt3);font-size:10px;line-height:1">+</span>
+            <span style="font-weight:600;font-size:13px">${duo[1]}</span>
+          </div>`;
+        html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid var(--brd)">
+          ${duoNames(duoA)}
+          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <button style="${bs(1)}" ${dis} onclick="guardarFinal('${key}',1)">G</button>
             <span style="color:var(--txt3);font-size:12px">vs</span>
             <button style="${bs(2)}" ${dis} onclick="guardarFinal('${key}',2)">G</button>
-          </div></td>
-          <td style="text-align:left;font-weight:500">${duoB[0]}<span style="color:var(--txt3);margin:0 4px">+</span>${duoB[1]}</td>
-        </tr>`;
+          </div>
+          ${duoNames(duoB).replace('align-items:flex-start','align-items:flex-end')}
+        </div>`;
       });
-      html+=`</tbody></table>`;
+      html+=`</div>`;
     }
 
     const cs={};
