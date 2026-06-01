@@ -187,6 +187,9 @@ input{font-family:'DM Sans',sans-serif}
     <button class="nav-btn" id="nav-mexicano" onclick="setTab('mexicano')">
       <span class="nav-icon">🇲🇽</span> Mexicano
     </button>
+    <button class="nav-btn" id="nav-triangular" onclick="setTab('triangular')">
+      <span class="nav-icon">🔺</span> Triangular
+    </button>
   </div>
   <div class="s-sec" id="sidebar-admin" style="display:none">
     <div class="s-lbl">Admin</div>
@@ -196,6 +199,17 @@ input{font-family:'DM Sans',sans-serif}
     <button class="nav-btn" id="nav-jugadores" onclick="setTab('jugadores')">
       <span class="nav-icon">👥</span> Jugadores
     </button>
+    <div style="margin-top:8px;padding:8px 10px;background:var(--surf2);border-radius:var(--rsm)">
+      <div style="font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Modos visibles</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt2);cursor:pointer;margin-bottom:6px">
+        <input type="checkbox" id="toggle-mexicano" onchange="toggleModo('mexicano',this.checked)" style="accent-color:#29ABE2">
+        Mexicano
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--txt2);cursor:pointer">
+        <input type="checkbox" id="toggle-triangular" onchange="toggleModo('triangular',this.checked)" style="accent-color:#29ABE2">
+        Triangular
+      </label>
+    </div>
     <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">
       <button class="btn-sec" id="btn-keepalive" onclick="toggleKeepAlive()"
         style="display:flex;align-items:center;gap:8px;justify-content:center">
@@ -235,6 +249,8 @@ input{font-family:'DM Sans',sans-serif}
 const S = {
   role:'viewer', password:'', tab:'fixture', state:null, ws:null,
   jugadores_edit:[], mex:null, canchaVista:'todas', keepAlive:false, _kaTimer:null,
+  modosHabilitados: {mexicano:true, triangular:true},
+  tri: null,
 };
 const LETRAS='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const COLORES=[
@@ -335,7 +351,7 @@ function setFixtureView(cancha){
 function setTab(tab){
   S.tab=tab;
   if(tab!=='fixture') S.canchaVista='todas';
-  ['fixture','posiciones','finales','mexicano','config','jugadores'].forEach(t=>{
+  ['fixture','posiciones','finales','mexicano','triangular','config','jugadores'].forEach(t=>{
     const el=document.getElementById(`nav-${t}`);
     if(el) el.classList.toggle('active',t===tab);
   });
@@ -349,6 +365,7 @@ function renderTab(){
   if(S.tab==='posiciones') el.innerHTML=renderPosiciones();
   if(S.tab==='finales')    el.innerHTML=renderFinales();
   if(S.tab==='mexicano')   el.innerHTML=renderMexicano();
+  if(S.tab==='triangular') el.innerHTML=renderTriangular();
   if(S.tab==='config')     el.innerHTML=S.role==='admin'?renderConfig():noAccess();
   if(S.tab==='jugadores')  el.innerHTML=S.role==='admin'?renderJugadores():noAccess();
 }
@@ -721,14 +738,14 @@ function renderJugadores(){
         Escribí los nombres. El grupo se asigna automáticamente según el orden.<br>
         Después de sortear podés ajustar el grupo de cada jugador.
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">`;
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;margin-bottom:14px">`;
   S.jugadores_edit.forEach((j,i)=>{
     const col=COLORES[(j.grupo||0)%COLORES.length];
-    html+=`<div class="jug-row">
+    html+=`<div class="jug-row" style="width:100%">
       <span class="jug-num">${i+1}</span>
       <span class="jug-dot" style="background:${col.txt}"></span>
-      <input class="jug-in" type="text" value="${j.nombre||''}" placeholder="Jugador ${i+1}" oninput="S.jugadores_edit[${i}].nombre=this.value">
-      <select class="grp-sel" onchange="changeGrupo(${i},+this.value)">
+      <input class="jug-in" type="text" value="${j.nombre||''}" placeholder="Jugador ${i+1}" oninput="S.jugadores_edit[${i}].nombre=this.value" style="min-width:0;flex:1">
+      <select class="grp-sel" onchange="changeGrupo(${i},+this.value)" style="flex-shrink:0">
         ${Array.from({length:nc},(_,g)=>`<option value="${g}" ${(j.grupo||0)===g?'selected':''}>${LETRAS[g]}</option>`).join('')}
       </select>
     </div>`;
@@ -901,13 +918,334 @@ function applyStateSafe(data){
   applyState(data,skip);
 }
 
+// ── TOGGLE MODOS ─────────────────────────────────────────────────────────────
+function toggleModo(modo, habilitado){
+  S.modosHabilitados[modo] = habilitado;
+  try{ localStorage.setItem('modos', JSON.stringify(S.modosHabilitados)); }catch(e){}
+  // Mostrar/ocultar botón en sidebar
+  const btn = document.getElementById(`nav-${modo}`);
+  if(btn) btn.style.display = habilitado ? '' : 'none';
+  // Si estaba en ese tab, volver a fixture
+  if(!habilitado && S.tab === modo) setTab('fixture');
+}
+
+function restaurarModos(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('modos')||'{}');
+    Object.assign(S.modosHabilitados, saved);
+  }catch(e){}
+  ['mexicano','triangular'].forEach(modo=>{
+    const btn = document.getElementById(`nav-${modo}`);
+    const chk = document.getElementById(`toggle-${modo}`);
+    const hab = S.modosHabilitados[modo] !== false;
+    if(btn) btn.style.display = hab ? '' : 'none';
+    if(chk) chk.checked = hab;
+  });
+}
+
+// ── TRIANGULAR ────────────────────────────────────────────────────────────────
+// Sistema de puntos pádel: 0 → 15 → 30 → 40 → Juego (con deuce)
+// Primero en ganar 6 juegos gana el set (tie-break en 6-6)
+// 3 parejas, cada una juega contra las otras 2. Gana el triangular quien gane más sets.
+
+const PUNTOS_SEQ = [0, 15, 30, 40];
+
+function puntosLabel(p){ return p >= 3 ? (p === 3 ? '40' : 'AD') : PUNTOS_SEQ[p].toString(); }
+
+function renderTriangular(){
+  // Estado guardado en S.tri (localStorage para persistir)
+  if(!S.tri) S.tri = cargarTri();
+  const tri = S.tri;
+  const dis = S.role !== 'admin' ? 'disabled' : '';
+
+  let html = `<div class="card" style="margin-bottom:12px">
+    <div class="card-hdr">
+      <span class="card-title">🔺 Modo Triangular</span>
+      <span class="badge" style="background:${tri.estado==='jugando'?'rgba(41,171,226,.15)':'var(--surf3)'};color:${tri.estado==='jugando'?'#29ABE2':'var(--txt2)'}">
+        ${tri.estado==='idle'?'Sin iniciar':tri.estado==='jugando'?'En juego':'🏆 Finalizado'}
+      </span>
+    </div>`;
+
+  // ── Setup (admin, idle) ──
+  if(S.role==='admin' && tri.estado==='idle'){
+    html += `<div style="padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;color:var(--txt2)">3 parejas fijas · Cada pareja juega contra las otras 2 · Sistema de puntos pádel (0-15-30-40)</div>`;
+
+    for(let p=0;p<3;p++){
+      const cols = ['#29ABE2','#D4A800','#ff6b62'];
+      html += `<div style="border:1px solid ${cols[p]}40;border-radius:8px;padding:10px 12px">
+        <div style="font-size:10px;font-weight:700;color:${cols[p]};letter-spacing:.08em;margin-bottom:8px">PAREJA ${p+1}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input class="p-in" style="flex:1;min-width:80px;text-align:left;width:auto"
+            placeholder="Jugador A" value="${tri.parejas[p]?.[0]||''}"
+            oninput="triSetJugador(${p},0,this.value)">
+          <input class="p-in" style="flex:1;min-width:80px;text-align:left;width:auto"
+            placeholder="Jugador B" value="${tri.parejas[p]?.[1]||''}"
+            oninput="triSetJugador(${p},1,this.value)">
+        </div>
+      </div>`;
+    }
+
+    html += `<div style="display:flex;gap:8px">
+      <button class="btn-sec" onclick="triSortear()" style="flex:1">🔀 Sortear parejas</button>
+      <button class="btn-main" onclick="triIniciar()" style="flex:1;margin-top:0">▶ Iniciar</button>
+    </div></div>`;
+  }
+
+  // ── Botones admin jugando ──
+  if(S.role==='admin' && tri.estado==='jugando'){
+    html += `<div style="padding:8px 14px;border-bottom:1px solid var(--brd)">
+      <button class="btn-sec" style="color:var(--red);margin-top:0" onclick="triReset()">🗑 Reiniciar triangular</button>
+    </div>`;
+  }
+  html += `</div>`;
+
+  if(tri.estado==='idle' && S.role!=='admin')
+    return html + `<div class="empty"><div class="empty-ico">⏳</div><div style="font-size:14px;margin-top:8px">El admin aún no inició el triangular.</div></div>`;
+  if(tri.estado==='idle') return html;
+
+  // ── Parejas ──
+  const cols = ['#29ABE2','#D4A800','#ff6b62'];
+  const colsBg = ['rgba(41,171,226,.12)','rgba(255,215,0,.12)','rgba(255,69,58,.12)'];
+  html += `<div style="display:flex;gap:8px;padding:10px 14px;flex-wrap:wrap;border-bottom:1px solid var(--brd)">`;
+  tri.parejas.forEach((par,pi)=>{
+    const sets = tri.partidos.filter(pt=>pt.ganador!==null).reduce((acc,pt)=>{
+      if(pt.pA===pi && pt.ganador===0) acc++;
+      if(pt.pB===pi && pt.ganador===1) acc++;
+      return acc;
+    },0);
+    html += `<div style="background:${colsBg[pi]};border:1px solid ${cols[pi]}40;border-radius:8px;padding:8px 12px;min-width:120px;flex:1">
+      <div style="font-size:10px;font-weight:700;color:${cols[pi]};margin-bottom:4px">PAREJA ${pi+1} · ${sets} set${sets!==1?'s':''}</div>
+      <div style="font-weight:600;font-size:13px">${par[0]}</div>
+      <div style="font-weight:600;font-size:13px">${par[1]}</div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── Partidos ──
+  html += `<div style="display:flex;flex-direction:column">`;
+  tri.partidos.forEach((pt,pti)=>{
+    const parA = tri.parejas[pt.pA], parB = tri.parejas[pt.pB];
+    const ganado = pt.ganador !== null;
+    const juegosA = pt.juegos[0], juegosB = pt.juegos[1];
+
+    // Puntos actuales del juego en curso
+    const pA = pt.puntos[0], pB = pt.puntos[1];
+    const esDeuce = pA >= 3 && pB >= 3;
+    const lblA = esDeuce && pA > pB ? 'AD' : puntosLabel(pA);
+    const lblB = esDeuce && pB > pA ? 'AD' : puntosLabel(pB);
+
+    html += `<div style="padding:12px 14px;border-bottom:1px solid var(--brd);${ganado?'opacity:.7':''}">
+      <div style="font-size:10px;font-weight:600;color:var(--txt3);letter-spacing:.06em;margin-bottom:8px">
+        PARTIDO ${pti+1} ${ganado?'✓':'▶ EN JUEGO'}
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+
+        <!-- Pareja A -->
+        <div style="flex:1;min-width:100px">
+          <div style="font-weight:600;font-size:13px;color:${cols[pt.pA]}">${parA[0]}</div>
+          <div style="font-size:10px;color:var(--txt3)">+</div>
+          <div style="font-weight:600;font-size:13px;color:${cols[pt.pA]}">${parA[1]}</div>
+        </div>
+
+        <!-- Marcador central -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+          <!-- Juegos -->
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:'DM Mono',monospace;font-size:20px;font-weight:700;
+              color:${juegosA>juegosB?cols[pt.pA]:'var(--txt)'}">${juegosA}</span>
+            <span style="color:var(--txt3);font-size:12px">juegos</span>
+            <span style="font-family:'DM Mono',monospace;font-size:20px;font-weight:700;
+              color:${juegosB>juegosA?cols[pt.pB]:'var(--txt)'}">${juegosB}</span>
+          </div>
+          <!-- Puntos actuales -->
+          ${!ganado ? `<div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:13px;font-weight:600;color:${pA>pB?cols[pt.pA]:'var(--txt2)'}">${lblA}</span>
+            <span style="color:var(--txt3);font-size:11px">-</span>
+            <span style="font-size:13px;font-weight:600;color:${pB>pA?cols[pt.pB]:'var(--txt2)'}">${lblB}</span>
+          </div>` : `<div style="font-size:11px;color:${cols[pt.ganador===0?pt.pA:pt.pB]};font-weight:600">
+            ${tri.parejas[pt.ganador===0?pt.pA:pt.pB][0]} + ${tri.parejas[pt.ganador===0?pt.pA:pt.pB][1]} ganaron
+          </div>`}
+          <!-- Botones de punto (solo admin, partido en curso) -->
+          ${!ganado && S.role==='admin' ? `<div style="display:flex;gap:6px;margin-top:4px">
+            <button onclick="triPunto(${pti},0)" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
+              border:2px solid ${cols[pt.pA]};background:${colsBg[pt.pA]};color:${cols[pt.pA]};cursor:pointer">
+              +1 ${parA[0].split(' ')[0]}
+            </button>
+            <button onclick="triPunto(${pti},1)" style="padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;
+              border:2px solid ${cols[pt.pB]};background:${colsBg[pt.pB]};color:${cols[pt.pB]};cursor:pointer">
+              +1 ${parB[0].split(' ')[0]}
+            </button>
+          </div>
+          <button onclick="triDeshacerPunto(${pti})" style="font-size:11px;color:var(--txt3);background:transparent;border:none;cursor:pointer;margin-top:2px">↩ Deshacer</button>
+          ` : ''}
+        </div>
+
+        <!-- Pareja B -->
+        <div style="flex:1;min-width:100px;text-align:right">
+          <div style="font-weight:600;font-size:13px;color:${cols[pt.pB]}">${parB[0]}</div>
+          <div style="font-size:10px;color:var(--txt3)">+</div>
+          <div style="font-weight:600;font-size:13px;color:${cols[pt.pB]}">${parB[1]}</div>
+        </div>
+
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  // ── Resultado final ──
+  if(tri.estado==='finalizado'){
+    const wins = tri.parejas.map((_,pi)=>
+      tri.partidos.filter(pt=>(pt.pA===pi&&pt.ganador===0)||(pt.pB===pi&&pt.ganador===1)).length
+    );
+    const maxW = Math.max(...wins);
+    const campeones = tri.parejas.filter((_,pi)=>wins[pi]===maxW);
+    html += `<div style="padding:20px;text-align:center;border-top:1px solid var(--brd)">
+      <div style="font-size:28px;margin-bottom:8px">🏆</div>
+      <div style="font-size:16px;font-weight:700;color:#29ABE2;margin-bottom:4px">
+        ${campeones.length>1?'¡Empate!':'¡Campeón triangular!'}
+      </div>
+      <div style="font-size:18px;font-weight:700">${campeones.map(c=>c.join(' + ')).join(' · ')}</div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:8px">
+        ${tri.parejas.map((p,pi)=>`${p.join('+')} · ${wins[pi]} set${wins[pi]!==1?'s':''}`).join(' | ')}
+      </div>
+      ${S.role==='admin'?`<button class="btn-sec" style="margin-top:12px;width:auto;padding:8px 20px" onclick="triReset()">Jugar de nuevo</button>`:''}
+    </div>`;
+  }
+
+  return html;
+}
+
+// ── Lógica puntaje triangular ──────────────────────────────────────────────
+
+function cargarTri(){
+  try{
+    const saved = localStorage.getItem('tri');
+    if(saved) return JSON.parse(saved);
+  }catch(e){}
+  return triEstadoInicial();
+}
+
+function triEstadoInicial(){
+  return {
+    estado: 'idle',
+    parejas: [['',''],['',''],['','']],
+    // Partidos: P0vsP1, P1vsP2, P0vsP2
+    partidos: [
+      {pA:0,pB:1,juegos:[0,0],puntos:[0,0],historial:[],ganador:null},
+      {pA:1,pB:2,juegos:[0,0],puntos:[0,0],historial:[],ganador:null},
+      {pA:0,pB:2,juegos:[0,0],puntos:[0,0],historial:[],ganador:null},
+    ]
+  };
+}
+
+function guardarTri(){
+  try{ localStorage.setItem('tri', JSON.stringify(S.tri)); }catch(e){}
+}
+
+function triSetJugador(pareja, pos, nombre){
+  S.tri.parejas[pareja][pos] = nombre;
+  guardarTri();
+}
+
+function triSortear(){
+  if(!S.state?.jugadores?.length){ toast('Cargá jugadores primero'); return; }
+  const nombres = S.state.jugadores.map(j=>j.nombre).filter(n=>n);
+  // Shuffle
+  for(let i=nombres.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[nombres[i],nombres[j]]=[nombres[j],nombres[i]];}
+  S.tri.parejas = [[nombres[0]||'',nombres[1]||''],[nombres[2]||'',nombres[3]||''],[nombres[4]||'',nombres[5]||'']];
+  guardarTri();
+  renderTab();
+}
+
+function triIniciar(){
+  const p = S.tri.parejas;
+  if(p.some(par=>!par[0].trim()||!par[1].trim())){toast('Completá los 6 jugadores');return;}
+  S.tri.estado = 'jugando';
+  guardarTri();
+  renderTab();
+  toast('🔺 Triangular iniciado');
+}
+
+function triReset(){
+  if(!confirm('¿Reiniciar el triangular?')) return;
+  S.tri = triEstadoInicial();
+  guardarTri();
+  renderTab();
+}
+
+function triPunto(partidoIdx, quien){
+  // quien: 0=pA, 1=pB
+  const pt = S.tri.partidos[partidoIdx];
+  if(pt.ganador !== null) return;
+
+  // Guardar historial para deshacer
+  pt.historial.push({puntos:[...pt.puntos],juegos:[...pt.juegos],ganador:pt.ganador});
+
+  pt.puntos[quien]++;
+  const pA = pt.puntos[0], pB = pt.puntos[1];
+  const esDeuce = pA >= 3 && pB >= 3;
+
+  let ganoJuego = false;
+  if(!esDeuce){
+    // Sin deuce: gana si llega a 4 puntos (40 + 1)
+    if(pt.puntos[quien] >= 4){
+      ganoJuego = true;
+    }
+  } else {
+    // En deuce: necesita 2 de ventaja
+    if(Math.abs(pA - pB) >= 2){
+      ganoJuego = pA > pB ? true : true;
+      quien = pA > pB ? 0 : 1;
+    }
+  }
+
+  if(ganoJuego){
+    pt.juegos[quien]++;
+    pt.puntos = [0,0];
+    const jA = pt.juegos[0], jB = pt.juegos[1];
+
+    // ¿Ganó el set?
+    let ganoSet = false;
+    if(jA >= 6 && jA - jB >= 2) ganoSet = true;
+    else if(jB >= 6 && jB - jA >= 2) ganoSet = true;
+    else if(jA === 7 || jB === 7) ganoSet = true; // tie-break
+
+    if(ganoSet){
+      pt.ganador = jA > jB ? 0 : 1;
+      // Verificar si terminó el triangular
+      const todosTerminados = S.tri.partidos.every(p=>p.ganador!==null);
+      if(todosTerminados) S.tri.estado = 'finalizado';
+    }
+  }
+
+  guardarTri();
+  renderTab();
+}
+
+function triDeshacerPunto(partidoIdx){
+  const pt = S.tri.partidos[partidoIdx];
+  if(!pt.historial.length) return;
+  const prev = pt.historial.pop();
+  pt.puntos = prev.puntos;
+  pt.juegos = prev.juegos;
+  pt.ganador = prev.ganador;
+  if(S.tri.estado === 'finalizado') S.tri.estado = 'jugando';
+  guardarTri();
+  renderTab();
+}
+
 // Restaurar keep-alive al recargar
 try{ S.keepAlive = localStorage.getItem('ka')==='true'; }catch(e){}
+try{ S.tri = cargarTri(); }catch(e){}
 
 connectWS();
 
-// Aplicar keep-alive 1s después de conectar (para que el sidebar esté visible si es admin)
-setTimeout(()=>{ if(S.keepAlive) _aplicarKeepAlive(); }, 1000);
+// Restaurar estado UI al cargar
+setTimeout(()=>{
+  if(S.keepAlive) _aplicarKeepAlive();
+  restaurarModos();
+}, 500);
 </script>
 </body>
 </html>
