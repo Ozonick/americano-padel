@@ -1,0 +1,169 @@
+:root {
+  --bg:#0f0f0f; --surf:#1a1a1a; --surf2:#222; --surf3:#2a2a2a;
+  --brd:rgba(255,255,255,0.08); --brd2:rgba(255,255,255,0.14);
+  --txt:#f0f0f0; --txt2:#888; --txt3:#444;
+  --green:#29ABE2; --green-d:rgba(41,171,226,0.15);
+  --blue:#0a84ff;  --blue-d:rgba(10,132,255,0.12);
+  --amber:#FFD700; --amber-d:rgba(255,215,0,0.15);
+  --red:#ff453a;   --red-d:rgba(255,69,58,0.12);
+  --r:10px; --rsm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;font-size:15px}
+button{font-family:'DM Sans',sans-serif;cursor:pointer}
+input{font-family:'DM Sans',sans-serif}
+
+/* ── Header ── */
+.hdr{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--brd);
+  position:sticky;top:0;background:rgba(15,15,15,.94);backdrop-filter:blur(14px);z-index:100}
+.hdr-logo{width:34px;height:34px;background:transparent;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.hdr-name{font-size:16px;font-weight:600}
+.hdr-sub{font-size:11px;color:var(--txt2)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.role-admin{background:rgba(41,171,226,.15);color:#29ABE2}
+.role-viewer{background:var(--surf2);color:var(--txt2)}
+.ws-dot{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex-shrink:0}
+.ws-dot.ok{background:#29ABE2}
+
+/* ── Layout ── */
+.layout{display:flex;min-height:calc(100vh - 61px)}
+.sidebar{width:270px;min-width:270px;border-right:1px solid var(--brd);padding:18px 14px;
+  overflow-y:auto;position:sticky;top:61px;height:calc(100vh - 61px)}
+.main{flex:1;padding:20px;overflow-y:auto;max-width:900px}
+
+/* ── Sidebar ── */
+.s-lbl{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:10px;padding-left:2px}
+.s-sec{margin-bottom:22px}
+.nav-btn{width:100%;text-align:left;padding:9px 12px;background:transparent;
+  border:none;border-radius:var(--rsm);color:var(--txt2);font-size:14px;
+  display:flex;align-items:center;gap:10px;transition:all .15s;margin-bottom:2px}
+.nav-btn:hover{background:var(--surf2);color:var(--txt)}
+.nav-btn.active{background:var(--surf3);color:var(--txt);font-weight:500}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.param-row{display:flex;align-items:center;justify-content:space-between;
+  padding:7px 10px;background:var(--surf2);border-radius:var(--rsm);margin-bottom:5px}
+.param-lbl{font-size:13px;color:var(--txt2)}
+.p-in{width:58px;background:var(--surf3);border:1px solid var(--brd2);border-radius:5px;
+  color:var(--txt);font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  text-align:center;padding:4px;outline:none}
+.p-in:focus{border-color:#29ABE2}
+.hint-box{background:rgba(41,171,226,.1);border:1px solid rgba(41,171,226,.25);
+  border-radius:var(--rsm);padding:10px 12px;font-size:12px;color:#29ABE2;margin-top:8px;line-height:1.6}
+.btn-main{width:100%;padding:10px;background:var(--green);border:none;border-radius:var(--r);
+  color:#0a0a0a;font-size:14px;font-weight:600;margin-top:6px;transition:opacity .15s}
+.btn-main:hover{opacity:.85}
+.btn-sec{width:100%;padding:8px;background:var(--surf2);border:1px solid var(--brd);
+  border-radius:var(--rsm);color:var(--txt2);font-size:13px;margin-top:5px;transition:all .15s}
+.btn-sec:hover{background:var(--surf3);color:var(--txt)}
+.btn-danger{width:100%;padding:8px;background:var(--red-d);border:1px solid rgba(255,69,58,.2);
+  border-radius:var(--rsm);color:var(--red);font-size:13px;margin-top:5px}
+
+/* ── Cards ── */
+.card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);
+  overflow:hidden;margin-bottom:12px}
+.card-hdr{padding:11px 16px;border-bottom:1px solid var(--brd);
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card-title{font-size:13px;font-weight:600}
+.badge{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:500;border:1px solid transparent}
+
+/* ── Fixture rows ── */
+.partido-row{display:flex;align-items:center;gap:10px;padding:11px 16px;
+  border-bottom:1px solid var(--brd);transition:background .1s}
+.partido-row:last-child{border-bottom:none}
+.partido-row:hover{background:var(--surf2)}
+.g-pill{width:26px;height:26px;border-radius:50%;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.equipos{flex:1;min-width:0}
+.e-names{font-size:13px;font-weight:500;line-height:1.4}
+.e-sep{color:var(--txt3);margin:0 5px;font-weight:300}
+.e-vs{color:var(--txt3);margin:0 8px;font-size:12px}
+.descansan{font-size:11px;color:var(--txt3);font-style:italic;margin-top:2px}
+.games-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.g-in{width:46px;background:var(--surf3);border:1px solid var(--brd2);border-radius:var(--rsm);
+  color:var(--txt);font-family:'DM Mono',monospace;font-size:16px;font-weight:600;
+  text-align:center;padding:6px 4px;outline:none;transition:border-color .15s;
+  -moz-appearance:textfield}
+.g-in:focus{box-shadow:0 0 0 3px rgba(41,171,226,.15)}
+.g-in:disabled{opacity:.4;cursor:not-allowed}
+.g-in::-webkit-inner-spin-button,
+.g-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.g-dash{color:var(--txt3);font-size:13px}
+.pts-chip{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:4px}
+
+/* ── Tabla de posiciones ── */
+.pos-table{width:100%;border-collapse:collapse}
+.pos-table th{font-size:11px;font-weight:600;color:var(--txt3);letter-spacing:.06em;
+  text-transform:uppercase;padding:9px 12px;text-align:center;border-bottom:1px solid var(--brd)}
+.pos-table th:nth-child(2){text-align:left}
+.pos-table td{padding:10px 12px;border-bottom:1px solid var(--brd);text-align:center;font-size:13px}
+.pos-table td:nth-child(2){text-align:left;font-weight:500}
+.pos-table tr:last-child td{border-bottom:none}
+.rk{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;
+  justify-content:center;font-size:12px;font-weight:800;background:var(--surf3);color:#aaa}
+.rk.g{background:#C9A84C;color:#000}
+.rk.s{background:#29ABE2;color:#000}
+.rk.b{background:#7a5c3e;color:#fff}
+.pts-val{font-family:'DM Mono',monospace;font-weight:600;font-size:15px}
+.dif-p{color:var(--green)} .dif-n{color:var(--red)}
+
+/* ── Finales ── */
+.copa-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px;font-size:13px;font-weight:600}
+.cls-chip{font-size:12px;padding:4px 10px;border-radius:20px;border:1px solid}
+
+/* ── Admin / Jugadores ── */
+.jug-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.jug-num{font-size:11px;color:var(--txt3);min-width:18px;text-align:right;
+  font-family:'DM Mono',monospace}
+.jug-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.jug-in{flex:1;background:var(--surf2);border:1px solid transparent;
+  border-radius:var(--rsm);color:var(--txt);font-size:13px;padding:6px 10px;outline:none}
+.jug-in:focus{border-color:var(--brd2)}
+.grp-sel{background:var(--surf2);border:1px solid var(--brd);border-radius:var(--rsm);
+  color:var(--txt2);font-size:12px;padding:4px 6px;outline:none;width:52px}
+
+/* ── Login ── */
+.login-card{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r);
+  padding:32px;width:320px;text-align:center}
+.login-title{font-size:18px;font-weight:600;margin-bottom:6px}
+.login-sub{font-size:13px;color:var(--txt2);margin-bottom:24px}
+.login-in{width:100%;background:var(--surf2);border:1px solid var(--brd2);
+  border-radius:var(--rsm);color:var(--txt);font-size:15px;
+  padding:10px 14px;outline:none;margin-bottom:10px;text-align:center}
+.login-in:focus{border-color:#29ABE2}
+.login-err{font-size:12px;color:var(--red);margin-top:6px;min-height:16px}
+.btn-ghost{background:transparent;border:1px solid var(--brd);border-radius:var(--rsm);
+  color:var(--txt2);font-size:13px;padding:7px 16px;margin-top:8px}
+
+/* ── Vacío / Loading ── */
+.empty{text-align:center;padding:60px 20px;color:var(--txt3)}
+.empty-ico{font-size:40px;margin-bottom:10px}
+.spinner{width:24px;height:24px;border:2px solid var(--brd);border-top-color:#29ABE2;
+  border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--surf3);border:1px solid var(--brd2);border-radius:var(--r);
+  padding:10px 20px;font-size:13px;font-weight:500;z-index:999;
+  animation:fade-in .2s ease;pointer-events:none}
+@keyframes fade-in{from{opacity:0;transform:translateX(-50%) translateY(8px)}}
+
+/* ── Mobile ── */
+@media(max-width:700px){
+  .sidebar{display:none;position:fixed;left:0;top:0;height:100vh;z-index:200;
+    background:var(--bg);width:280px}
+  .sidebar.open{display:block}
+  .mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199}
+  .mob-overlay.show{display:block}
+  .main{padding:14px}
+  .mob-menu{display:flex!important}
+  .e-names{font-size:12px}
+  .partido-row{padding:9px 12px;gap:8px}
+}
+.mob-menu{display:none;align-items:center;justify-content:center;
+  width:34px;height:34px;background:var(--surf2);border:1px solid var(--brd);
+  border-radius:var(--rsm);color:var(--txt);font-size:18px;margin-right:4px}
