@@ -51,6 +51,9 @@
       <button class="nav-btn" id="nav-triangular" onclick="setTab('triangular')">
         <span class="nav-icon">🔺</span> Triangular
       </button>
+      <button class="nav-btn" id="nav-torneo" onclick="setTab('torneo')" style="display:none">
+        <span class="nav-icon">🏆</span> Torneo
+      </button>
     </div>
 
     <div class="s-sec" id="sidebar-admin" style="display:none">
@@ -84,6 +87,16 @@
           <span id="ka-label">Mantener activo</span>
         </button>
         <button class="btn-danger" onclick="confirmReset()">🗑 Nuevo torneo</button>
+      </div>
+    </div>
+
+    <!-- Tamaño de texto (cada usuario, por dispositivo) -->
+    <div class="s-sec">
+      <div class="s-lbl">Tamaño de texto</div>
+      <div style="display:flex;gap:6px">
+        <button class="btn-sec fz-btn" style="flex:1;margin-top:0;font-size:13px" onclick="setFontSize(0)">A</button>
+        <button class="btn-sec fz-btn" style="flex:1;margin-top:0;font-size:15px" onclick="setFontSize(1)">A+</button>
+        <button class="btn-sec fz-btn" style="flex:1;margin-top:0;font-size:17px" onclick="setFontSize(2)">A++</button>
       </div>
     </div>
 
@@ -131,6 +144,7 @@
 <script src="/static/js/americano.js"></script>
 <script src="/static/js/mexicano.js"></script>
 <script src="/static/js/triangular.js"></script>
+<script src="/static/js/torneo.js"></script>
 
 </body>
 </html>

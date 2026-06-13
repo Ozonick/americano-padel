@@ -43,7 +43,7 @@ function guardarTri() {
 function renderTriangular() {
   if (!S.tri) S.tri = cargarTri();
   const tri    = S.tri;
-  const dis    = S.role !== 'admin' ? 'disabled' : '';
+  const dis    = !esAdmin() ? 'disabled' : '';
   const cols   = ['#29ABE2', '#D4A800', '#ff6b62'];
   const colsBg = ['rgba(41,171,226,.12)', 'rgba(255,215,0,.12)', 'rgba(255,69,58,.12)'];
 
@@ -59,7 +59,7 @@ function renderTriangular() {
     </div>`;
 
   // Setup (admin, idle)
-  if (S.role === 'admin' && tri.estado === 'idle') {
+  if (esAdmin() && tri.estado === 'idle') {
     html += `<div style="padding:14px;display:flex;flex-direction:column;gap:12px">
       <div style="font-size:12px;color:var(--txt2)">
         3 parejas fijas por cancha · Sistema de puntos pádel (0-15-30-40-Juego)
@@ -95,7 +95,7 @@ function renderTriangular() {
     </div></div>`;
   }
 
-  if (S.role === 'admin' && tri.estado === 'jugando') {
+  if (esAdmin() && tri.estado === 'jugando') {
     html += `<div style="padding:8px 14px;border-bottom:1px solid var(--brd)">
       <button class="btn-sec" style="color:var(--red);margin-top:0" onclick="triReset()">
         🗑 Reiniciar triangular
@@ -104,7 +104,7 @@ function renderTriangular() {
   }
   html += `</div>`;
 
-  if (tri.estado === 'idle' && S.role !== 'admin')
+  if (tri.estado === 'idle' && !esAdmin())
     return html + `<div class="empty"><div class="empty-ico">⏳</div>
       <div style="font-size:14px;margin-top:8px">El admin aún no inició el triangular.</div></div>`;
   if (tri.estado === 'idle') return html;
@@ -177,7 +177,7 @@ function renderTriangular() {
             : `<div style="font-size:10px;color:${cols[pt.ganador === 0 ? pt.pA : pt.pB]};font-weight:600">
               Ganó P${(pt.ganador === 0 ? pt.pA : pt.pB) + 1}
             </div>`}
-            ${!ganado && S.role === 'admin' ? `
+            ${!ganado && esAdmin() ? `
               <div style="display:flex;gap:4px;margin-top:2px">
                 <button onclick="triPunto(${ci},${pti},0)"
                   style="padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;

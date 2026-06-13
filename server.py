@@ -22,9 +22,19 @@ from core.db      import init_db, get_db, cfg_get, cfg_set, mex_cfg_get, mex_cfg
 from core.state   import get_full_state
 from core.fixture import calcular_rondas_sugeridas
 import core.mexicano as mexicano
+import core.torneo   as torneo
 
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "padel2024")
-STATIC_DIR     = Path("static")
+ADMIN_PASSWORD  = os.environ.get("ADMIN_PASSWORD", "padel2024")
+TORNEO_PASSWORD = os.environ.get("TORNEO_PASSWORD", "torneo2026")
+STATIC_DIR      = Path("static")
+
+def _es_admin(pwd: str) -> bool:
+    """Admin o superadmin pueden usar las rutas de administración."""
+    return pwd in (ADMIN_PASSWORD, TORNEO_PASSWORD)
+
+def _es_super(pwd: str) -> bool:
+    """Solo el superadmin (torneo) puede usar las rutas de torneo."""
+    return pwd == TORNEO_PASSWORD
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
@@ -133,6 +143,8 @@ async def get_state():
 
 @app.post("/api/auth")
 async def auth(req: AuthReq):
+    if req.password == TORNEO_PASSWORD:
+        return {"ok": True, "role": "superadmin"}
     if req.password == ADMIN_PASSWORD:
         return {"ok": True, "role": "admin"}
     raise HTTPException(status_code=401, detail="Contraseña incorrecta")
@@ -140,7 +152,7 @@ async def auth(req: AuthReq):
 
 @app.post("/api/config")
 async def save_config(req: ConfigReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     campos_validos = {
         "canchas", "rondas_prel", "rondas_final",
@@ -155,7 +167,7 @@ async def save_config(req: ConfigReq):
 
 @app.post("/api/jugadores")
 async def save_jugadores(req: JugadoresReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     with get_db() as con:
         con.execute("DELETE FROM jugadores")
@@ -170,7 +182,7 @@ async def save_jugadores(req: JugadoresReq):
 
 @app.post("/api/resultado")
 async def save_resultado(req: ResultadoReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     with get_db() as con:
         con.execute(
@@ -183,7 +195,7 @@ async def save_resultado(req: ResultadoReq):
 
 @app.post("/api/reset")
 async def reset(req: ResetReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     with get_db() as con:
         con.execute("DELETE FROM resultados")
@@ -195,7 +207,7 @@ async def reset(req: ResetReq):
 
 @app.post("/api/shuffle")
 async def shuffle(req: ShuffleReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     nombres = [n for n in req.nombres if n.strip()]
     random.shuffle(nombres)
@@ -235,7 +247,7 @@ async def get_mex_state():
 
 @app.post("/api/mexicano/config")
 async def mex_config(req: MexConfigReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     mex_cfg_set("canchas", str(req.canchas))
     mex_cfg_set("rondas",  str(req.rondas))
@@ -246,7 +258,7 @@ async def mex_config(req: MexConfigReq):
 
 @app.post("/api/mexicano/iniciar")
 async def mex_iniciar(req: MexIniciarReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     with get_db() as con:
         jug = [
@@ -268,7 +280,7 @@ async def mex_iniciar(req: MexIniciarReq):
 
 @app.post("/api/mexicano/resultado")
 async def mex_resultado(req: MexResultadoReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     with get_db() as con:
         con.execute(
@@ -281,7 +293,7 @@ async def mex_resultado(req: MexResultadoReq):
 
 @app.post("/api/mexicano/siguiente")
 async def mex_siguiente(req: MexSiguienteReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     ra = int(mex_cfg_get("ronda_actual"))
     rt = int(mex_cfg_get("rondas"))
@@ -307,7 +319,7 @@ async def mex_siguiente(req: MexSiguienteReq):
 
 @app.post("/api/mexicano/reset")
 async def mex_reset(req: MexResetReq):
-    if req.password != ADMIN_PASSWORD:
+    if not _es_admin(req.password):
         raise HTTPException(status_code=401)
     with get_db() as con:
         con.execute("DELETE FROM mexicano_partidos")
@@ -316,6 +328,83 @@ async def mex_reset(req: MexResetReq):
     await manager.broadcast(mexicano.get_state())
     return {"ok": True}
 
+
+# ── Rutas Torneo de Parejas (solo superadmin) ────────────────────────────────
+
+@app.get("/api/torneo/state")
+async def torneo_state():
+    return JSONResponse(torneo.get_state())
+
+class TorParejasReq(BaseModel):
+    password: str
+    parejas: list
+    sortear: bool = False
+
+@app.post("/api/torneo/parejas")
+async def torneo_parejas(req: TorParejasReq):
+    if not _es_super(req.password):
+        raise HTTPException(status_code=401)
+    try:
+        torneo.set_parejas(req.parejas, sortear=req.sortear)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    state = torneo.get_state()
+    await manager.broadcast(state)
+    return {"ok": True}
+
+class TorSimpleReq(BaseModel):
+    password: str
+
+@app.post("/api/torneo/iniciar")
+async def torneo_iniciar(req: TorSimpleReq):
+    if not _es_super(req.password):
+        raise HTTPException(status_code=401)
+    try:
+        torneo.iniciar()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    state = torneo.get_state()
+    await manager.broadcast(state)
+    return {"ok": True}
+
+class TorResultadoReq(BaseModel):
+    password: str
+    id: str
+    ga: int
+    gb: int
+
+@app.post("/api/torneo/resultado")
+async def torneo_resultado(req: TorResultadoReq):
+    if not _es_super(req.password):
+        raise HTTPException(status_code=401)
+    try:
+        torneo.guardar_resultado(req.id, req.ga, req.gb)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    state = torneo.get_state()
+    await manager.broadcast(state)
+    return {"ok": True}
+
+@app.post("/api/torneo/playoffs")
+async def torneo_playoffs(req: TorSimpleReq):
+    if not _es_super(req.password):
+        raise HTTPException(status_code=401)
+    try:
+        torneo.generar_playoffs()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    state = torneo.get_state()
+    await manager.broadcast(state)
+    return {"ok": True}
+
+@app.post("/api/torneo/reset")
+async def torneo_reset(req: TorSimpleReq):
+    if not _es_super(req.password):
+        raise HTTPException(status_code=401)
+    torneo.reset()
+    state = torneo.get_state()
+    await manager.broadcast(state)
+    return {"ok": True}
 
 # ── WebSocket ─────────────────────────────────────────────────────────────────
 

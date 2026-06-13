@@ -19,7 +19,7 @@ function renderMexicano() {
   const ronda  = m.ronda_actual  || 0;
   const rondas = m.rondas_total  || 7;
   const games  = parseInt(cfg.games) || 16;
-  const dis    = S.role !== 'admin' ? 'disabled' : '';
+  const dis    = !esAdmin() ? 'disabled' : '';
 
   const badgeBg    = estado === 'jugando'    ? 'rgba(41,171,226,.15)'
                    : estado === 'finalizado' ? 'rgba(76,217,100,.15)'
@@ -38,7 +38,7 @@ function renderMexicano() {
     </div>`;
 
   // Configuración inicial (admin, idle)
-  if (S.role === 'admin' && estado === 'idle') {
+  if (esAdmin() && estado === 'idle') {
     html += `<div style="padding:14px;display:grid;gap:8px">
       <div class="param-row"><span class="param-lbl">Canchas simultáneas</span>
         <input class="p-in" id="mex-canchas" type="number" min="1" max="8" value="${cfg.canchas || 3}"></div>
@@ -54,7 +54,7 @@ function renderMexicano() {
   }
 
   // Controles admin en juego
-  if (S.role === 'admin' && estado === 'jugando') {
+  if (esAdmin() && estado === 'jugando') {
     html += `<div style="padding:10px 14px;display:flex;gap:8px;border-bottom:1px solid var(--brd)">
       <button class="btn-sec" style="flex:1" onclick="mexSiguienteRonda()"
         ${m.ronda_completa && ronda < rondas ? '' : 'disabled'}>
@@ -68,7 +68,7 @@ function renderMexicano() {
   }
   html += `</div>`;
 
-  if (estado === 'idle' && S.role !== 'admin')
+  if (estado === 'idle' && !esAdmin())
     return html + `<div class="empty"><div class="empty-ico">⏳</div>
       <div style="font-size:14px;margin-top:8px">El admin aún no inició el torneo mexicano.</div></div>`;
   if (estado === 'idle') return html;
@@ -155,7 +155,7 @@ function renderMexicano() {
         <div style="font-size:13px;color:var(--txt2);margin-top:8px">
           ${m.stats[g]?.pts || 0} pts · ${m.stats[g]?.gf || 0} games a favor
         </div>
-        ${S.role === 'admin' ? `<button class="btn-sec" style="margin-top:12px;width:auto;padding:8px 20px"
+        ${esAdmin() ? `<button class="btn-sec" style="margin-top:12px;width:auto;padding:8px 20px"
           onclick="mexReset()">Jugar de nuevo</button>` : ''}
       </div>
     </div>`;

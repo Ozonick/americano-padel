@@ -167,3 +167,6 @@ input{font-family:'DM Sans',sans-serif}
 .mob-menu{display:none;align-items:center;justify-content:center;
   width:34px;height:34px;background:var(--surf2);border:1px solid var(--brd);
   border-radius:var(--rsm);color:var(--txt);font-size:18px;margin-right:4px}
+
+/* ── Tamaño de texto ── */
+.fz-btn.active { border-color: #29ABE2; color: #29ABE2; }

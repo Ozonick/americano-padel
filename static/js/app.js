@@ -5,12 +5,13 @@
 
 // ── Estado global ─────────────────────────────────────────────────────────────
 const S = {
-  role:    'viewer',   // 'viewer' | 'admin'
+  role:    'viewer',   // 'viewer' | 'admin' | 'superadmin'
   password: '',
   tab:     'fixture',
   state:   null,       // último estado del servidor (torneo principal)
   mex:     null,       // estado del modo mexicano
   tri:     null,       // estado del modo triangular (localStorage)
+  torneo:  null,       // estado del torneo de parejas (server)
   ws:      null,
   jugadores_edit: [],
   canchaVista: 'todas',
@@ -31,6 +32,11 @@ const COLORES = [
 ];
 
 
+// ── Roles ─────────────────────────────────────────────────────────────────────
+function esAdmin() { return S.role === 'admin' || S.role === 'superadmin'; }
+function esSuper() { return S.role === 'superadmin'; }
+
+
 // ── WebSocket ─────────────────────────────────────────────────────────────────
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -46,6 +52,7 @@ function connectWS() {
     const data = JSON.parse(e.data);
     if (data.type === 'state')          applyStateSafe(data);
     if (data.type === 'mexicano_state') { S.mex = data; if (S.tab === 'mexicano') renderTab(); }
+    if (data.type === 'torneo_state')   { S.torneo = data; if (S.tab === 'torneo') renderTab(); }
     // pings del server se ignoran silenciosamente
   };
 
@@ -141,7 +148,7 @@ function setFixtureView(cancha) {
 function setTab(tab) {
   S.tab = tab;
   if (tab !== 'fixture') S.canchaVista = 'todas';
-  ['fixture','posiciones','finales','mexicano','triangular','config','jugadores'].forEach(t => {
+  ['fixture','posiciones','finales','mexicano','triangular','torneo','config','jugadores'].forEach(t => {
     document.getElementById(`nav-${t}`)?.classList.toggle('active', t === tab);
   });
   closeSidebar();
@@ -160,8 +167,9 @@ function renderTab() {
     finales:     renderFinales,
     mexicano:    renderMexicano,
     triangular:  renderTriangular,
-    config:      () => S.role === 'admin' ? renderConfig()    : noAccess(),
-    jugadores:   () => S.role === 'admin' ? renderJugadores() : noAccess(),
+    torneo:      () => esSuper() ? renderTorneo()    : noAccess(),
+    config:      () => esAdmin() ? renderConfig()    : noAccess(),
+    jugadores:   () => esAdmin() ? renderJugadores() : noAccess(),
   };
   if (map[S.tab]) el.innerHTML = map[S.tab]();
 }
@@ -169,7 +177,12 @@ function renderTab() {
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function showLogin() {
-  if (S.role === 'admin') { S.role = 'viewer'; S.password = ''; updateRoleUI(); return; }
+  if (esAdmin()) {
+    S.role = 'viewer'; S.password = '';
+    try { localStorage.removeItem('auth'); } catch(e) {}
+    updateRoleUI(); renderTab();
+    return;
+  }
   document.getElementById('login-wrap').style.display = 'flex';
   document.getElementById('login-pass').value = '';
   document.getElementById('login-err').textContent = '';
@@ -185,26 +198,53 @@ async function doLogin() {
     body: JSON.stringify({ password: pass }),
   });
   if (res.ok) {
-    S.role = 'admin'; S.password = pass;
+    const data = await res.json();
+    S.role = data.role || 'admin'; S.password = pass;
+    try { localStorage.setItem('auth', JSON.stringify({ role: S.role, password: pass })); } catch(e) {}
     hideLogin(); updateRoleUI(); renderTab();
-    toast('✓ Modo admin activado');
+    toast(S.role === 'superadmin' ? '✓ Modo Super Admin activado' : '✓ Modo admin activado');
   } else {
     document.getElementById('login-err').textContent = 'Contraseña incorrecta';
   }
+}
+
+async function restaurarAuth() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('auth') || 'null'); } catch(e) {}
+  if (!saved || !saved.password) return;
+  try {
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: saved.password }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      S.role = data.role || 'admin';
+      S.password = saved.password;
+      updateRoleUI(); renderTab();
+    } else {
+      localStorage.removeItem('auth');
+    }
+  } catch(e) { /* sin conexión: se reintenta en la próxima carga */ }
 }
 
 function updateRoleUI() {
   const badge    = document.getElementById('role-badge');
   const adminSec = document.getElementById('sidebar-admin');
   const loginBtn = document.querySelector('.hdr-right .btn-ghost');
-  if (S.role === 'admin') {
-    badge.textContent = 'Admin'; badge.className = 'role-badge role-admin';
+  const navTorneo = document.getElementById('nav-torneo');
+  if (esAdmin()) {
+    badge.textContent = esSuper() ? 'Super Admin' : 'Admin';
+    badge.className = 'role-badge role-admin';
     adminSec.style.display = 'block';
+    if (navTorneo) navTorneo.style.display = esSuper() ? '' : 'none';
     if (loginBtn) loginBtn.textContent = 'Salir admin';
     _aplicarKeepAlive();
   } else {
     badge.textContent = 'Viewer'; badge.className = 'role-badge role-viewer';
     adminSec.style.display = 'none';
+    if (navTorneo) navTorneo.style.display = 'none';
     if (loginBtn) loginBtn.textContent = 'Admin';
   }
 }
@@ -327,13 +367,35 @@ function confirmReset() {
 }
 
 
+// ── Tamaño de letra (por dispositivo, localStorage) ──────────────────────────
+const FZ_NIVELES = [1, 1.15, 1.3];
+
+function setFontSize(nivel) {
+  const n = Math.max(0, Math.min(FZ_NIVELES.length - 1, nivel));
+  try { localStorage.setItem('fz', '' + n); } catch(e) {}
+  aplicarFontSize();
+}
+
+function aplicarFontSize() {
+  let n = 0;
+  try { n = parseInt(localStorage.getItem('fz')) || 0; } catch(e) {}
+  n = Math.max(0, Math.min(FZ_NIVELES.length - 1, n));
+  document.body.style.zoom = FZ_NIVELES[n];
+  document.querySelectorAll('.fz-btn').forEach((b, i) =>
+    b.classList.toggle('active', i === n)
+  );
+}
+
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 try { S.keepAlive = localStorage.getItem('ka') === 'true'; } catch(e) {}
 try { S.tri = cargarTri(); } catch(e) {}
 
 connectWS();
+restaurarAuth();
 
 setTimeout(() => {
   if (S.keepAlive) _aplicarKeepAlive();
   restaurarModos();
+  aplicarFontSize();
 }, 500);

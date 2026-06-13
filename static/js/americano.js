@@ -12,7 +12,7 @@ function renderFixture() {
 
   const rp  = parseInt(config.rondas_prel)   || 7;
   const ng  = parseInt(config.games_partido) || 16;
-  const dis = S.role !== 'admin' ? 'disabled' : '';
+  const dis = !esAdmin() ? 'disabled' : '';
 
   const gruposFiltrados = S.canchaVista === 'todas'
     ? grupos.map((g, i) => ({ g, i }))
@@ -214,7 +214,7 @@ function renderFinales() {
     { id: 'plata',  emoji: '🥈', label: 'Copa Plata',  posIdx: [2, 3], color: '#4da6ff', bg: 'rgba(10,132,255,.1)',    brd: 'rgba(10,132,255,.35)'   },
     { id: 'bronce', emoji: '🥉', label: 'Copa Bronce', posIdx: [4, 5], color: '#c4956a', bg: 'rgba(196,149,106,.12)',  brd: 'rgba(196,149,106,.4)'   },
   ];
-  const dis = S.role !== 'admin' ? 'disabled' : '';
+  const dis = !esAdmin() ? 'disabled' : '';
   let html  = '';
 
   copasDef.forEach(({ id, emoji, label, posIdx, color, bg, brd }) => {
@@ -326,7 +326,7 @@ function renderFinales() {
 }
 
 async function guardarFinal(key, ganador) {
-  if (S.role !== 'admin') return;
+  if (!esAdmin()) return;
   const res = await api('/api/resultado', {
     password: S.password, id: key,
     games_a: ganador, games_b: 0, fase: 'final',
