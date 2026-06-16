@@ -134,7 +134,7 @@ function torRenderZonas(t) {
       </div>`;
 
     // Tabla de posiciones
-    html += `<table class="pos-table"><thead><tr><th>Pos</th><th>Pareja</th><th>PJ</th><th>PG</th><th>Dif</th></tr></thead><tbody>`;
+    html += `<table class="pos-table"><thead><tr><th>Pos</th><th>Pareja</th><th>PJ</th><th>GG</th><th>GP</th><th>DG</th></tr></thead><tbody>`;
     z.tabla.forEach((row, pos) => {
       const dif = row.gf - row.gc;
       const clasifica = pos < 2;
@@ -142,7 +142,8 @@ function torRenderZonas(t) {
         <td><span class="rk ${pos === 0 ? 'g' : pos === 1 ? 's' : ''}">${pos + 1}</span></td>
         <td style="font-size:12px">${torNombre(t, row.idx)}${clasifica ? ' <span style="font-size:9px;color:' + col + '">✓</span>' : ''}</td>
         <td style="color:#7a9bbf">${row.pj}</td>
-        <td><span class="pts-val" style="color:${col};font-size:14px">${row.pg}</span></td>
+        <td><span class="pts-val" style="color:${col};font-size:14px">${row.gf}</span></td>
+        <td style="color:#c47a7a">${row.gc}</td>
         <td class="${dif > 0 ? 'dif-p' : dif < 0 ? 'dif-n' : ''}">${dif > 0 ? '+' : ''}${dif}</td>
       </tr>`;
     });
