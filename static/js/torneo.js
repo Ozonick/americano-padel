@@ -74,13 +74,13 @@ function torRenderConfig(t) {
     for (let p = 0; p < 4; p++) {
       const idx = z * 4 + p;
       const par = t.parejas[idx] || { j1: '', j2: '' };
-      html += `<div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;min-width:18px;flex-shrink:0">${idx + 1}</span>
+      html += `<div style="display:grid;grid-template-columns:18px minmax(0,1fr) minmax(0,1fr);align-items:center;gap:6px">
+        <span style="font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;text-align:right">${idx + 1}</span>
         <input class="jug-in" placeholder="Jugador 1" value="${par.j1 || ''}"
-          style="flex:1;min-width:0;width:100%"
+          style="width:100%;min-width:0"
           data-tpar="${idx}" data-tj="j1" oninput="torEditPareja(this)">
         <input class="jug-in" placeholder="Jugador 2" value="${par.j2 || ''}"
-          style="flex:1;min-width:0;width:100%"
+          style="width:100%;min-width:0"
           data-tpar="${idx}" data-tj="j2" oninput="torEditPareja(this)">
       </div>`;
     }
