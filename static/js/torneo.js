@@ -64,7 +64,7 @@ function torRenderConfig(t) {
       <span class="card-title">Cargá las 16 parejas</span>
       <span class="badge" style="background:var(--surf3);color:var(--txt2)">4 zonas de 4</span>
     </div>
-    <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">`;
+    <div style="padding:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">`;
 
   for (let z = 0; z < 4; z++) {
     const col = TOR_COLS[z], bg = TOR_BGS[z];
@@ -75,10 +75,12 @@ function torRenderConfig(t) {
       const idx = z * 4 + p;
       const par = t.parejas[idx] || { j1: '', j2: '' };
       html += `<div style="display:flex;align-items:center;gap:6px">
-        <span style="font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;min-width:18px">${idx + 1}</span>
+        <span style="font-size:10px;color:var(--txt3);font-family:'DM Mono',monospace;min-width:18px;flex-shrink:0">${idx + 1}</span>
         <input class="jug-in" placeholder="Jugador 1" value="${par.j1 || ''}"
+          style="flex:1;min-width:0;width:100%"
           data-tpar="${idx}" data-tj="j1" oninput="torEditPareja(this)">
         <input class="jug-in" placeholder="Jugador 2" value="${par.j2 || ''}"
+          style="flex:1;min-width:0;width:100%"
           data-tpar="${idx}" data-tj="j2" oninput="torEditPareja(this)">
       </div>`;
     }
