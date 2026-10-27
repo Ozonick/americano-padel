@@ -39,9 +39,20 @@ git push -u origin main
 5. Hacé click en "Create Web Service"
 6. Esperá ~2 minutos → te da una URL tipo `americano-padel.onrender.com`
 
-### 3. Cambiar la contraseña de admin
+### 3. Cargar las contraseñas de admin
 
-En Render → tu servicio → "Environment" → editá la variable `ADMIN_PASSWORD` con la contraseña que quieras.
+Las contraseñas **no** están en el código (el repo es público). Se cargan en Render → tu servicio → "Environment":
+
+- `ADMIN_PASSWORD`: contraseña de admin (carga resultados, jugadores y configuración)
+- `TORNEO_PASSWORD`: contraseña de superadmin (además maneja el Torneo de Parejas)
+
+Si falta alguna, ese acceso queda deshabilitado (los viewers ven todo igual).
+
+Para probar en tu compu:
+
+```bash
+ADMIN_PASSWORD=tu-clave TORNEO_PASSWORD=otra-clave uvicorn server:app --reload
+```
 
 ## Cómo usar el día del torneo
 

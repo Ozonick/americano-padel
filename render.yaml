@@ -5,10 +5,12 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
     envVars:
+      # Las contraseñas NO van en este archivo (el repo es público).
+      # Se cargan a mano en Render → tu servicio → Environment.
       - key: ADMIN_PASSWORD
-        value: padel2024
+        sync: false
       - key: TORNEO_PASSWORD
-        value: torneo2026
+        sync: false
       - key: DB_PATH
         value: /data/torneo.db
       - key: PYTHON_VERSION

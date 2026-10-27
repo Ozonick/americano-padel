@@ -6,6 +6,7 @@ Este archivo solo contiene rutas y el WebSocket.
 Toda la lógica de negocio vive en core/.
 """
 import asyncio
+import hmac
 import json
 import os
 import random
@@ -24,17 +25,27 @@ from core.fixture import calcular_rondas_sugeridas
 import core.mexicano as mexicano
 import core.torneo   as torneo
 
-ADMIN_PASSWORD  = os.environ.get("ADMIN_PASSWORD", "padel2024")
-TORNEO_PASSWORD = os.environ.get("TORNEO_PASSWORD", "torneo2026")
+# Las contraseñas se cargan solo como variables de entorno (en Render: Environment).
+# Si una falta, ese rol queda deshabilitado: los viewers ven todo igual, pero nadie entra como admin.
+ADMIN_PASSWORD  = os.environ.get("ADMIN_PASSWORD", "")
+TORNEO_PASSWORD = os.environ.get("TORNEO_PASSWORD", "")
 STATIC_DIR      = Path("static")
+
+for _var in ("ADMIN_PASSWORD", "TORNEO_PASSWORD"):
+    if not os.environ.get(_var):
+        print(f"⚠️  Falta la variable de entorno {_var}: ese acceso queda deshabilitado.", flush=True)
+
+def _coincide(pwd: str, esperada: str) -> bool:
+    """Compara contraseñas sin filtrar tiempos. Una contraseña vacía o no configurada nunca coincide."""
+    return bool(pwd) and bool(esperada) and hmac.compare_digest(pwd.encode(), esperada.encode())
 
 def _es_admin(pwd: str) -> bool:
     """Admin o superadmin pueden usar las rutas de administración."""
-    return pwd in (ADMIN_PASSWORD, TORNEO_PASSWORD)
+    return _coincide(pwd, ADMIN_PASSWORD) or _coincide(pwd, TORNEO_PASSWORD)
 
 def _es_super(pwd: str) -> bool:
     """Solo el superadmin (torneo) puede usar las rutas de torneo."""
-    return pwd == TORNEO_PASSWORD
+    return _coincide(pwd, TORNEO_PASSWORD)
 
 # ── App ───────────────────────────────────────────────────────────────────────
 
@@ -148,9 +159,9 @@ async def get_state():
 
 @app.post("/api/auth")
 async def auth(req: AuthReq):
-    if req.password == TORNEO_PASSWORD:
+    if _es_super(req.password):
         return {"ok": True, "role": "superadmin"}
-    if req.password == ADMIN_PASSWORD:
+    if _es_admin(req.password):
         return {"ok": True, "role": "admin"}
     raise HTTPException(status_code=401, detail="Contraseña incorrecta")
 
