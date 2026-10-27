@@ -144,7 +144,8 @@ async def root():
 
 @app.get("/beta")
 async def beta():
-    return FileResponse(STATIC_DIR / "beta.html")
+    # Misma app; static/js/beta.js detecta /beta y cambia las vistas de Fixture y Posiciones
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 @app.get("/api/ping")
