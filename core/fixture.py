@@ -3,6 +3,20 @@ Lógica de fixture: generación de partidos, estadísticas y clasificación.
 """
 from itertools import combinations
 
+# Puntuación por partido (cada jugador de la pareja): ganar 2 · empatar 1 · perder 0
+PTS_GANA   = 2
+PTS_EMPATA = 1
+PTS_PIERDE = 0
+
+
+def pts_partido(propios: int, rivales: int) -> int:
+    """Puntos que suma cada jugador según los games propios vs. los del rival."""
+    if propios > rivales:
+        return PTS_GANA
+    if propios == rivales:
+        return PTS_EMPATA
+    return PTS_PIERDE
+
 
 def gen_fixture(grupo: list, rondas: int) -> list:
     """
@@ -116,8 +130,8 @@ def calcular_stats(
                     stats[j]["gc"] += ga
                     stats[j]["pj"] += 1
 
-            p1 = 3 if ga > gb else 1 if ga == gb else 0
-            p2 = 3 if gb > ga else 1 if ga == gb else 0
+            p1 = pts_partido(ga, gb)
+            p2 = pts_partido(gb, ga)
             for j in [j1, j2]:
                 if j in stats:
                     stats[j]["pts"] += p1

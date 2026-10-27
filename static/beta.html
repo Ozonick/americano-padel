@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panteras Pádel · Beta</title>
+<link rel="icon" type="image/png" href="/static/panteras.png">
+<link rel="apple-touch-icon" href="/static/panteras.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #0E0F11; --sup: #1A1C1F; --sup-2: #25282C; --borde: #34383D; --texto-1: #F3F5F6; --texto-2: #AAB4BB;
+    --pantera: #29ABE2; --neon: #39FF14; --resalte: #39FF14; --cancha-bg: #1E6D9C; --amarillo: #FFD700; --rojo: #ff7b72;
+    --fz-on-bg: #29ABE2; --fz-on-fg: #0E0F11;
+    --fuente: "DM Sans", "Avenir Next", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    color-scheme: dark;
+  }
+  body { background: var(--fondo); color: var(--texto-1); font-family: var(--fuente); font-size: 1rem; }
+  h1, h2, h3 { font-weight: 800; letter-spacing: -0.01em; }
+  .wrap { width: min(980px, 100% - 2rem); margin-inline: auto; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { font-size: 112.5%; scroll-behavior: smooth; }
+  body { margin: 0; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, p, ul, ol { margin: 0; }
+  button { font: inherit; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 3px solid var(--resalte); outline-offset: 3px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .ficha { transition: none !important; } }
+
+  /* Tamaño de letra: los tres botones A / A+ / A++ cambian el tamaño base de toda la página */
+  .fz { display: inline-flex; gap: .35rem; align-items: center; }
+  .fz span { font-size: .85rem; margin-right: .2rem; opacity: .8; }
+  .fz button { min-width: 2.6rem; height: 2.6rem; padding: 0 .55rem; border-radius: 10px; cursor: pointer; font-weight: 800;
+    background: transparent; color: inherit; border: 2px solid currentColor; opacity: .75; }
+  .fz button:nth-of-type(1) { font-size: .85rem; } .fz button:nth-of-type(2) { font-size: 1.05rem; } .fz button:nth-of-type(3) { font-size: 1.3rem; }
+  .fz button[aria-pressed="true"] { opacity: 1; background: var(--fz-on-bg); color: var(--fz-on-fg); border-color: var(--fz-on-bg); }
+
+  /* Cancha de pádel con fichas de jugadores */
+  .pista-caja { position: relative; width: 100%; aspect-ratio: 100 / 72; container-type: inline-size; }
+  .pista { position: absolute; inset: 0 0 30.56% 0; background: var(--cancha-bg); border-radius: 8px; overflow: hidden; }
+  .pista svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .banco-eti { position: absolute; left: 2%; top: 84.72%; transform: translateY(-50%); font-size: clamp(.75rem, 3.2cqw, 1rem); font-weight: 600; opacity: .92; }
+  .ficha {
+    position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%);
+    padding: .28em .72em; border-radius: 999px; border: 2px solid #fff; max-width: 42cqw; overflow: hidden; text-overflow: ellipsis;
+    font-weight: 800; font-size: clamp(1rem, 4.6cqw, 1.75rem); line-height: 1.1; white-space: nowrap;
+    transition: left .45s cubic-bezier(.3,.7,.2,1), top .45s cubic-bezier(.3,.7,.2,1), background .25s, color .25s;
+  }
+  .ficha.par-a { background: #fff; color: #14212B; }
+  .ficha.par-b { background: #14212B; color: #fff; }
+  .ficha.libre { background: transparent; color: #fff; border-style: dashed; border-color: rgba(255,255,255,.75); font-size: clamp(.9rem, 4cqw, 1.5rem); }
+  .marcador { position: absolute; left: 50%; top: 34.72%; transform: translate(-50%, -50%); padding: .2em .6em; border-radius: 10px;
+    background: var(--fondo); border: 2px solid #fff; font-weight: 800; font-size: clamp(1rem, 4.4cqw, 1.6rem); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .barra { border-bottom: 1px solid var(--borde); padding-block: .8rem; }
+  .barra .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
+  .marca { display: flex; align-items: center; gap: .7rem; min-width: 0; }
+  .marca img { width: 2.9rem; height: 2.9rem; flex: none; border-radius: 50%; background: #fff; }
+  .marca b { display: block; font-size: 1.35rem; line-height: 1.15; }
+  .marca small { color: var(--texto-2); font-size: .9rem; }
+  .tag-beta { display: inline-block; vertical-align: .2em; font-size: .7rem; line-height: 1.4; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #0E0F11; background: var(--amarillo); border-radius: 6px; padding: .15rem .5rem; }
+  .acciones { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; }
+  .volver { display: inline-flex; align-items: center; min-height: 2.6rem; padding: 0 1rem; border-radius: 10px; border: 2px solid var(--borde);
+    color: var(--texto-1); text-decoration: none; font-weight: 700; }
+  .volver:hover { border-color: var(--pantera); }
+  .volver .corto { display: none; }
+  @media (max-width: 600px) {
+    .volver .largo { display: none; } .volver .corto { display: inline; }
+    .acciones { margin-left: 0; width: 100%; justify-content: space-between; }
+  }
+  @media (max-width: 400px) { .fz span { display: none; } }
+
+  main { padding-block: 1.4rem 3rem; }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.05; }
+  .sub { margin-top: .5rem; color: var(--texto-2); font-size: 1.1rem; max-width: 52ch; }
+  .vivo { margin-top: .6rem; display: inline-flex; align-items: center; gap: .5rem; font-size: .95rem; color: var(--texto-2); }
+  .vivo i { width: .65rem; height: .65rem; border-radius: 50%; background: var(--texto-2); }
+  .vivo.ok i { background: var(--neon); box-shadow: 0 0 0 .2rem rgba(57,255,20,.18); }
+
+  .fila { margin-top: 1.2rem; display: flex; flex-wrap: wrap; gap: .6rem; }
+  .seg { display: flex; background: var(--sup); border: 1px solid var(--borde); border-radius: 14px; padding: .3rem; gap: .3rem; flex-wrap: wrap; }
+  .seg button { min-height: 3.2rem; padding: .3rem 1.1rem; border: 0; border-radius: 10px; background: transparent; color: var(--texto-2); font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--pantera); color: #0E0F11; }
+  .seg.vista { width: 100%; display: grid; grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 600px) { .seg.vista { grid-template-columns: repeat(2, 1fr); } }
+  .seg.grupo button { text-align: center; line-height: 1.25; padding-inline: .25rem; font-size: 1.05rem; }
+  .seg.grupo { width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); }
+
+  .panel { margin-top: 1.2rem; background: var(--sup); border: 1px solid var(--borde); border-radius: 16px; padding: clamp(.9rem, 3vw, 1.5rem); }
+  .rondas-fila { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .rondas-fila .etq { font-weight: 800; font-size: 1.2rem; margin-right: .3rem; }
+  .rb { position: relative; min-width: 3.2rem; height: 3.2rem; border-radius: 12px; border: 2px solid var(--borde); background: var(--sup-2); color: var(--texto-1); font-weight: 800; font-size: 1.2rem; cursor: pointer; }
+  .rb.hecha::after { content: ""; position: absolute; top: .3rem; right: .3rem; width: .45rem; height: .45rem; border-radius: 50%; background: var(--neon); }
+  .rb[aria-pressed="true"] { background: #fff; color: #0E0F11; border-color: #fff; }
+  .ronda-ley { margin-top: .6rem; color: var(--texto-2); font-size: .95rem; display: flex; align-items: center; gap: .45rem; }
+  .ronda-ley i { width: .45rem; height: .45rem; border-radius: 50%; background: var(--neon); }
+  .frase { margin-top: 1rem; font-size: 1.25rem; line-height: 1.5; min-height: 3.8rem; }
+  .frase strong { color: #fff; }
+  .frase b { color: var(--neon); }
+  .caja-cancha { margin-top: .6rem; max-width: 760px; margin-inline: auto; }
+
+  /* Tabla ronda × cancha */
+  .mx { width: 100%; border-collapse: collapse; font-size: 1.1rem; }
+  .mx th { text-align: left; padding: .7rem .7rem; color: var(--texto-2); font-weight: 700; border-bottom: 2px solid var(--borde); }
+  .mx td { padding: .9rem .7rem; border-bottom: 1px solid var(--borde); vertical-align: top; }
+  .mx td.rd { font-weight: 800; font-size: 1.5rem; width: 3.6rem; color: var(--pantera); }
+  .mx .p { font-weight: 800; font-size: 1.15rem; }
+  .mx .p.gano { color: var(--neon); }
+  .mx .vs { color: var(--texto-2); font-size: .95rem; margin: .1rem 0; }
+  .mx .marc { display: inline-block; margin: .2rem 0; padding: .05rem .5rem; border-radius: 6px; background: var(--sup-2); font-weight: 800; font-variant-numeric: tabular-nums; }
+  .mx .ds { margin-top: .4rem; color: var(--texto-2); font-size: .98rem; }
+  .mx tbody tr { cursor: pointer; }
+  .mx tbody tr.act td { background: var(--sup-2); }
+  .mx tbody tr.act td.rd { box-shadow: inset 6px 0 0 var(--neon); }
+  .mx tbody tr.act .marc { background: var(--fondo); }
+  .ayuda { margin-top: .8rem; color: var(--texto-2); font-size: .95rem; }
+  @media (max-width: 720px) {
+    .mx thead { display: none; }
+    .mx, .mx tbody, .mx tr, .mx td { display: block; }
+    .mx tr { padding: .8rem .5rem; border-bottom: 1px solid var(--borde); }
+    .mx tbody tr.act { background: var(--sup-2); box-shadow: inset 6px 0 0 var(--neon); }
+    .mx td, .mx tbody tr.act td { border: 0; padding: .35rem .5rem; background: transparent; box-shadow: none !important; }
+    .mx td.rd { width: auto; padding-bottom: 0; }
+    .mx td.rd::before { content: "Ronda "; }
+    .mx td[data-c]::before { content: attr(data-c); display: block; color: var(--texto-2); font-size: .9rem; font-weight: 700; }
+  }
+
+  /* Por jugador */
+  .elegir { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+  .elegir .etq { font-weight: 800; font-size: 1.2rem; margin-right: .3rem; }
+  .jb { min-height: 3.2rem; padding: .3rem 1.1rem; border-radius: 999px; border: 2px solid var(--borde); background: var(--sup-2); color: var(--texto-1); font-weight: 700; font-size: 1.1rem; cursor: pointer; }
+  .jb[aria-pressed="true"] { background: var(--neon); color: #0E0F11; border-color: var(--neon); }
+  .resumen { margin-top: 1.1rem; font-size: 1.3rem; line-height: 1.45; }
+  .resumen b { color: var(--neon); }
+  .linea { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .6rem; }
+  .linea li { display: grid; grid-template-columns: 4.6rem 1fr; gap: .8rem; align-items: center; background: var(--sup-2); border-radius: 12px; padding: .8rem 1rem; font-size: 1.15rem; }
+  .linea li .r { font-weight: 800; font-size: 1.1rem; color: var(--texto-2); }
+  .linea li.juega { border-left: 6px solid var(--pantera); }
+  .linea li.descansa { border-left: 6px dashed var(--borde); color: var(--texto-2); }
+  .linea strong { color: #fff; }
+  .linea .res-l { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem .6rem; margin-top: .3rem; font-weight: 700; }
+
+  /* Posiciones */
+  .pos-cab { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .3rem 1rem; }
+  .pos-cab h2 { font-size: 1.5rem; }
+  .pos-cab p { color: var(--texto-2); font-size: 1rem; }
+  .tabla-scroll { overflow-x: auto; margin-top: .8rem; }
+  .pos { width: 100%; border-collapse: collapse; font-size: 1.15rem; }
+  .pos th { text-align: left; color: var(--texto-2); font-weight: 700; font-size: .95rem; padding: .5rem .6rem; border-bottom: 2px solid var(--borde); white-space: nowrap; }
+  .pos td { padding: .75rem .6rem; border-bottom: 1px solid var(--borde); font-variant-numeric: tabular-nums; }
+  .pos .n { text-align: right; }
+  .pos td.ps { font-weight: 800; width: 3rem; padding-left: 1rem; box-shadow: inset 6px 0 0 var(--copa, transparent); }
+  .pos td.nm { font-weight: 700; }
+  .pos td.pt { font-weight: 800; font-size: 1.35rem; color: var(--pantera); }
+  .pos td.mas { color: var(--neon); } .pos td.menos { color: var(--rojo); }
+  .pos tr.yo td { background: var(--sup-2); }
+  @media (max-width: 600px) { .pos .anc { display: none; } .pos { font-size: 1.05rem; } .pos th, .pos td { padding-inline: .4rem; } .pos td.ps { padding-left: .8rem; } }
+  .copas { list-style: none; padding: 0; margin: 1rem 0 0; display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; color: var(--texto-2); font-size: 1rem; }
+  .copas li { display: flex; align-items: center; gap: .45rem; }
+  .copas i { width: .4rem; height: 1.2rem; border-radius: 3px; background: var(--copa); }
+  .pos-nota { margin-top: .6rem; color: var(--texto-2); font-size: .95rem; }
+
+  .vacio { text-align: center; padding-block: 2.5rem; color: var(--texto-2); font-size: 1.15rem; }
+
+  details.punt { margin-top: 1.4rem; background: var(--sup); border: 1px solid var(--borde); border-radius: 16px; }
+  details.punt summary { list-style: none; cursor: pointer; padding: 1.1rem 1.3rem; font-weight: 800; font-size: 1.25rem; display: flex; justify-content: space-between; }
+  details.punt summary::-webkit-details-marker { display: none; }
+  details.punt summary::after { content: "+"; font-size: 1.7rem; line-height: 1; color: var(--pantera); }
+  details.punt[open] summary::after { content: "–"; }
+  .punt-in { padding: 0 1.3rem 1.3rem; font-size: 1.15rem; display: grid; gap: .9rem; }
+  .reglas { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem 1.2rem; }
+  .reglas li { display: flex; align-items: center; gap: .5rem; }
+  .ej { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; background: var(--sup-2); border-radius: 12px; padding: 1rem; }
+  .ej[hidden] { display: none; }
+  .ej .eq { font-weight: 800; }
+  .ej .res { font-size: 1.9rem; font-weight: 800; }
+  .chipn { display: inline-block; font-weight: 800; padding: .2rem .65rem; border-radius: 6px; font-size: 1rem; }
+  .chipn.g { background: var(--neon); color: #0E0F11; } .chipn.e { background: rgba(255,215,0,.25); color: var(--amarillo); } .chipn.p { background: #3a3e43; color: #C9D1D6; }
+  .punt-in ol { margin: 0; padding-left: 1.4rem; display: grid; gap: .3rem; }
+</style>
+</head>
+<body>
+<header class="barra"><div class="wrap">
+  <div class="marca">
+    <img src="/static/panteras.png" alt="Panteras Pádel" width="52" height="52">
+    <div><b><span id="t-nombre">Super Americano</span> <span class="tag-beta">Beta</span></b><small id="t-sub">Cargando…</small></div>
+  </div>
+  <div class="acciones">
+    <div class="fz" role="group" aria-label="Tamaño de letra"><span>Letra</span>
+      <button type="button" onclick="setFz(0)" aria-label="Letra normal">A</button>
+      <button type="button" onclick="setFz(1)" aria-label="Letra grande">A+</button>
+      <button type="button" onclick="setFz(2)" aria-label="Letra muy grande">A++</button>
+    </div>
+    <a class="volver" href="/" aria-label="Volver a la app">← <span class="largo">&nbsp;Volver a la app</span><span class="corto">&nbsp;Volver</span></a>
+  </div>
+</div></header>
+
+<main><div class="wrap">
+  <h1>Fixture del Americano</h1>
+  <p class="sub">Elegí cómo verlo: en la cancha, en una tabla con todas las canchas, solo tus partidos o la tabla de posiciones.</p>
+  <p class="vivo" id="vivo"><i></i><span id="vivo-txt">Conectando…</span></p>
+
+  <section class="panel vacio" id="vacio">Conectando con el servidor… Si estuvo dormido puede tardar unos 30 segundos.</section>
+
+  <div id="contenido" hidden>
+    <div class="fila"><div class="seg vista" id="vista" role="group" aria-label="Forma de ver el fixture">
+      <button type="button" data-v="cancha">En cancha</button>
+      <button type="button" data-v="tabla">Tabla</button>
+      <button type="button" data-v="jugador">Mis partidos</button>
+      <button type="button" data-v="posiciones">Posiciones</button>
+    </div></div>
+
+    <div class="fila" id="fila-grupo"><div class="seg grupo" id="grupos" role="group" aria-label="Elegir cancha"></div></div>
+
+    <section class="panel" id="p-cancha" aria-live="polite">
+      <div class="rondas-fila" id="rondas"></div>
+      <p class="ronda-ley"><i></i>Ronda con resultado cargado</p>
+      <p class="frase" id="frase"></p>
+      <div class="caja-cancha" id="caja"></div>
+    </section>
+
+    <section class="panel" id="p-tabla" hidden>
+      <table class="mx">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+      <p class="ayuda">Tocá una ronda para marcarla y verla después en la cancha.</p>
+    </section>
+
+    <section class="panel" id="p-jugador" hidden>
+      <div class="elegir" id="elegir"></div>
+      <p class="resumen" id="resumen"></p>
+      <ul class="linea" id="linea"></ul>
+    </section>
+
+    <section class="panel" id="p-posiciones" hidden>
+      <div class="pos-cab"><h2 id="pos-tit"></h2><p id="pos-sub"></p></div>
+      <div class="tabla-scroll">
+        <table class="pos">
+          <thead><tr>
+            <th scope="col">#</th><th scope="col">Jugador</th><th scope="col" class="n">Pts</th>
+            <th scope="col" class="n anc">PJ</th><th scope="col" class="n" title="Ganados - Empatados - Perdidos">G-E-P</th>
+            <th scope="col" class="n" title="Diferencia de games">Dif</th><th scope="col" class="n anc" title="Games a favor">GF</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <ul class="copas" id="pos-copas"></ul>
+      <p class="pos-nota">Se ordena por puntos, después por diferencia de games y después por games a favor.</p>
+    </section>
+  </div>
+
+  <details class="punt">
+    <summary>Cómo se puntúa</summary>
+    <div class="punt-in">
+      <p>Cada partido se juega a <span id="pg-games">16</span> games. Cada jugador de la pareja suma:</p>
+      <ul class="reglas">
+        <li><span class="chipn g">2 pts</span> si gana</li>
+        <li><span class="chipn e">1 pt</span> si empata</li>
+        <li><span class="chipn p">0 pts</span> si pierde</li>
+      </ul>
+      <div class="ej" id="ej-gana"></div>
+      <div class="ej" id="ej-empate"></div>
+      <p>La tabla de cada grupo se ordena por:</p>
+      <ol><li>Puntos acumulados</li><li>Diferencia de games (a favor menos en contra)</li><li>Games a favor</li></ol>
+      <p>Al terminar las rondas, 1° y 2° de cada grupo pasan a la Copa Oro, 3° y 4° a la Copa Plata y 5° y 6° a la Copa Bronce.</p>
+    </div>
+  </details>
+</div></main>
+
+<script>
+  const LETRAS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  // Puntuación: ganar 2 · empatar 1 · perder 0 (cada jugador de la pareja). Igual que en la app.
+  const PTS_GANA = 2, PTS_EMPATA = 1, PTS_PIERDE = 0;
+  const ptsPartido = (propios, rivales) => propios > rivales ? PTS_GANA : propios === rivales ? PTS_EMPATA : PTS_PIERDE;
+  const ptsTxt = (n) => n === 1 ? '1 pt' : n + ' pts';
+  const chipPts = (n) => '<span class="chipn ' + (n === PTS_GANA ? 'g' : n === PTS_EMPATA ? 'e' : 'p') + '">+' + ptsTxt(n) + '</span>';
+
+  // Mismo corte que la pestaña Finales: 1°-2° Oro, 3°-4° Plata, 5°-6° Bronce
+  const COPAS = [
+    { nombre: 'Copa Oro',    color: '#C9A84C', pos: [0, 1] },
+    { nombre: 'Copa Plata',  color: '#4da6ff', pos: [2, 3] },
+    { nombre: 'Copa Bronce', color: '#c4956a', pos: [4, 5] }
+  ];
+  const copaDe = (i) => COPAS.find((c) => c.pos.includes(i));
+
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const listaY = (xs) => xs.length <= 1 ? xs.join('') : xs.slice(0, -1).join(', ') + ' y ' + xs[xs.length - 1];
+  const nombres = (xs) => listaY(xs.map(esc));
+  const plural = (n, uno, varios) => n + ' ' + (n === 1 ? uno : varios);
+
+  // ── Tamaño de letra (se guarda en este dispositivo) ──
+  const FZ = [112.5, 131, 150];
+  function aplicarFz() {
+    let i = 0; try { i = parseInt(localStorage.getItem('fz-panteras')) || 0; } catch (e) {}
+    i = Math.max(0, Math.min(2, i));
+    document.documentElement.style.fontSize = FZ[i] + '%';
+    $$('.fz button').forEach((b, k) => b.setAttribute('aria-pressed', k === i ? 'true' : 'false'));
+  }
+  function setFz(i) { try { localStorage.setItem('fz-panteras', i); } catch (e) {} aplicarFz(); }
+
+  // ── Preferencias de este dispositivo: vista, cancha y "quién sos" ──
+  const VISTAS = ['cancha', 'tabla', 'jugador', 'posiciones'];
+  const S = { vista: 'cancha', grupo: 0, ronda: null, jug: {} };
+  function cargarPrefs() {
+    try {
+      const p = JSON.parse(localStorage.getItem('beta-panteras') || '{}');
+      if (VISTAS.includes(p.vista)) S.vista = p.vista;
+      if (Number.isInteger(p.grupo) && p.grupo >= 0) S.grupo = p.grupo;
+      if (p.jug && typeof p.jug === 'object') S.jug = p.jug;
+    } catch (e) {}
+  }
+  function guardarPrefs() {
+    try { localStorage.setItem('beta-panteras', JSON.stringify({ vista: S.vista, grupo: S.grupo, jug: S.jug })); } catch (e) {}
+  }
+
+  // ── Modelo: se arma con el estado real del servidor (/api/state y WebSocket) ──
+  let M = null;
+
+  function armarModelo(st) {
+    const cfg = st.config || {};
+    const rp = parseInt(cfg.rondas_prel) || 7;
+    const res = st.resultados || {};
+    const grupos = (st.grupos || []).map((noms, gi) => {
+      const rondas = ((st.fixtures_prel || [])[gi] || []).slice(0, rp).map(([j1, j2, j3, j4], ri) => {
+        const r = res['prel-' + gi + '-' + ri];
+        const jugado = !!r && r.ga != null && r.gb != null;
+        return {
+          a: [j1, j2], b: [j3, j4], rest: noms.filter((n) => ![j1, j2, j3, j4].includes(n)),
+          jugado, ga: jugado ? +r.ga : null, gb: jugado ? +r.gb : null
+        };
+      });
+      const g = { gi, nombres: noms, rondas, cancha: 'Cancha ' + (gi + 1), grupo: 'Grupo ' + LETRAS[gi] };
+      g.tabla = posiciones(g);
+      return g;
+    });
+    return {
+      cfg, grupos,
+      jugadores: (st.jugadores || []).length,
+      games: parseInt(cfg.games_partido) || 16,
+      nRondas: grupos.reduce((m, g) => Math.max(m, g.rondas.length), 0)
+    };
+  }
+
+  // Puntos acumulados y orden del grupo (mismo criterio que la pestaña Posiciones de la app)
+  function posiciones(g) {
+    const st = {};
+    g.nombres.forEach((n) => { st[n] = { pj: 0, g: 0, e: 0, p: 0, gf: 0, gc: 0, pts: 0 }; });
+    const sumar = (par, pro, con) => par.forEach((n) => {
+      const s = st[n]; if (!s) return;
+      s.pj++; s.gf += pro; s.gc += con; s.pts += ptsPartido(pro, con);
+      if (pro > con) s.g++; else if (pro === con) s.e++; else s.p++;
+    });
+    g.rondas.forEach((r) => { if (r.jugado) { sumar(r.a, r.ga, r.gb); sumar(r.b, r.gb, r.ga); } });
+    const orden = [...g.nombres].sort((x, y) => {
+      const a = st[x], b = st[y];
+      return (b.pts - a.pts) || ((b.gf - b.gc) - (a.gf - a.gc)) || (b.gf - a.gf);
+    });
+    return { st, orden };
+  }
+
+  // Primera ronda sin resultado (la que se está jugando)
+  function rondaActual(g) {
+    const i = g.rondas.findIndex((r) => !r.jugado);
+    return i === -1 ? Math.max(0, g.rondas.length - 1) : i;
+  }
+
+  // ── Cancha ──
+  const POS = {
+    a: [{ x: 24, y: 20.83 }, { x: 24, y: 48.61 }],
+    b: [{ x: 76, y: 20.83 }, { x: 76, y: 48.61 }]
+  };
+  // Lugares en el banco según cuántos descansan (1 fila hasta 3, después 2 filas)
+  function posBanco(n) {
+    const fila = (k, y) => {
+      const span = k < 2 ? 0 : k === 2 ? 32 : 52;
+      return Array.from({ length: k }, (_, i) => ({ x: k < 2 ? 60 : 60 - span / 2 + i * span / (k - 1), y }));
+    };
+    if (n <= 3) return fila(n, 84.72);
+    const arriba = Math.ceil(n / 2);
+    return fila(arriba, 78.5).concat(fila(n - arriba, 92));
+  }
+  const LINEAS = '<svg viewBox="0 0 200 100" preserveAspectRatio="none" aria-hidden="true">' +
+    '<g fill="none" stroke="#fff" stroke-width="1.6">' +
+    '<rect x="2" y="2" width="196" height="96" vector-effect="non-scaling-stroke"/>' +
+    '<line x1="30.5" y1="2" x2="30.5" y2="98" vector-effect="non-scaling-stroke"/>' +
+    '<line x1="169.5" y1="2" x2="169.5" y2="98" vector-effect="non-scaling-stroke"/>' +
+    '<line x1="30.5" y1="50" x2="169.5" y2="50" vector-effect="non-scaling-stroke"/></g>' +
+    '<line x1="100" y1="2" x2="100" y2="98" stroke="#fff" stroke-width="3.2" stroke-dasharray="3 2" vector-effect="non-scaling-stroke"/></svg>';
+
+  // Una cancha por grupo; se rearma solo si cambian los jugadores (así las fichas se animan entre rondas)
+  const CAJAS = {};
+  function cajaDe(g) {
+    const key = g.nombres.join('\n');
+    if (CAJAS[g.gi] && CAJAS[g.gi].dataset.key === key) return CAJAS[g.gi];
+    const caja = document.createElement('div');
+    caja.className = 'pista-caja'; caja.dataset.key = key;
+    caja.innerHTML = '<div class="pista">' + LINEAS + '</div><span class="banco-eti">Descansan</span>' +
+      '<span class="marcador" hidden></span>' +
+      g.nombres.map((n) => '<div class="ficha" style="--x:50%;--y:50%">' + esc(n) + '</div>').join('');
+    $$('.ficha', caja).forEach((f, i) => { f.dataset.n = g.nombres[i]; });
+    return (CAJAS[g.gi] = caja);
+  }
+  function pintarCancha(caja, r) {
+    const banco = posBanco(r.rest.length);
+    $$('.ficha', caja).forEach((f) => {
+      const n = f.dataset.n; let i, p, cls;
+      if ((i = r.a.indexOf(n)) > -1) { p = POS.a[i]; cls = 'par-a'; }
+      else if ((i = r.b.indexOf(n)) > -1) { p = POS.b[i]; cls = 'par-b'; }
+      else { p = banco[r.rest.indexOf(n)]; cls = 'libre'; }
+      f.hidden = !p;
+      if (!p) return;
+      f.style.setProperty('--x', p.x + '%');
+      f.style.setProperty('--y', p.y + '%');
+      f.className = 'ficha ' + cls;
+    });
+    $('.banco-eti', caja).hidden = !r.rest.length;
+    const m = $('.marcador', caja);
+    m.hidden = !r.jugado;
+    m.textContent = r.jugado ? r.ga + ' – ' + r.gb : '';
+  }
+  function frase(g, ri) {
+    const r = g.rondas[ri];
+    let t = '<strong>Ronda ' + (ri + 1) + ' en la ' + g.cancha + '.</strong> ' + (r.jugado ? 'Jugaron ' : 'Juegan ') +
+      nombres(r.a) + ' contra ' + nombres(r.b) + '.';
+    if (r.rest.length) t += ' ' + (r.jugado ? 'Descansaron ' : 'Descansan ') + nombres(r.rest) + '.';
+    if (r.jugado) {
+      if (r.ga === r.gb) t += '<br>Empataron <b>' + r.ga + ' – ' + r.gb + '</b>: suman ' + ptsTxt(PTS_EMPATA) + ' cada uno.';
+      else t += '<br>Ganaron ' + nombres(r.ga > r.gb ? r.a : r.b) + ' <b>' + Math.max(r.ga, r.gb) + ' – ' + Math.min(r.ga, r.gb) +
+        '</b>: suman ' + ptsTxt(PTS_GANA) + ' cada uno.';
+    }
+    return t;
+  }
+
+  function renderCancha() {
+    const g = M.grupos[S.grupo], fila = $('#rondas');
+    if (!g.rondas.length) {
+      fila.innerHTML = ''; fila.dataset.n = '0'; $('#caja').innerHTML = '';
+      $('#frase').textContent = 'Este grupo todavía no tiene partidos (hacen falta al menos 4 jugadores).';
+      return;
+    }
+    if (fila.dataset.n !== String(g.rondas.length)) {
+      fila.dataset.n = g.rondas.length;
+      fila.innerHTML = '<span class="etq">Ronda</span>' +
+        g.rondas.map((_, i) => '<button type="button" class="rb" data-i="' + i + '">' + (i + 1) + '</button>').join('');
+      $$('.rb', fila).forEach((b) => { b.onclick = () => { S.ronda = +b.dataset.i; render(); }; });
+    }
+    S.ronda = Math.min(S.ronda, g.rondas.length - 1);
+    $$('.rb', fila).forEach((b, i) => {
+      b.setAttribute('aria-pressed', i === S.ronda ? 'true' : 'false');
+      b.classList.toggle('hecha', g.rondas[i].jugado);
+      b.setAttribute('aria-label', 'Ronda ' + (i + 1) + (g.rondas[i].jugado ? ', con resultado' : ''));
+    });
+    $('#frase').innerHTML = frase(g, S.ronda);
+    const caja = cajaDe(g), cont = $('#caja');
+    if (cont.firstChild !== caja) { cont.innerHTML = ''; cont.appendChild(caja); }
+    pintarCancha(caja, g.rondas[S.ronda]);
+  }
+
+  function renderTabla() {
+    $('#p-tabla thead').innerHTML = '<tr><th>Ronda</th>' + M.grupos.map((g) => '<th>' + g.cancha + '</th>').join('') + '</tr>';
+    let filas = '';
+    for (let i = 0; i < M.nRondas; i++) {
+      filas += '<tr class="' + (i === S.ronda ? 'act' : '') + '" data-i="' + i + '" tabindex="0"><td class="rd">' + (i + 1) + '</td>' +
+        M.grupos.map((g) => {
+          const r = g.rondas[i];
+          if (!r) return '<td data-c="' + g.cancha + '"><div class="ds">Sin partido</div></td>';
+          const ganaA = r.jugado && r.ga > r.gb, ganaB = r.jugado && r.gb > r.ga;
+          return '<td data-c="' + g.cancha + ' · ' + g.grupo + '">' +
+            '<div class="p' + (ganaA ? ' gano' : '') + '">' + esc(r.a[0]) + ' + ' + esc(r.a[1]) + '</div>' +
+            (r.jugado ? '<div class="marc">' + r.ga + ' – ' + r.gb + '</div>' : '<div class="vs">contra</div>') +
+            '<div class="p' + (ganaB ? ' gano' : '') + '">' + esc(r.b[0]) + ' + ' + esc(r.b[1]) + '</div>' +
+            (r.rest.length ? '<div class="ds">Descansan ' + nombres(r.rest) + '</div>' : '') + '</td>';
+        }).join('') + '</tr>';
+    }
+    $('#p-tabla tbody').innerHTML = filas;
+    $$('#p-tabla tbody tr').forEach((tr) => {
+      const elegir = () => { S.ronda = +tr.dataset.i; renderTabla(); };
+      tr.onclick = elegir;
+      tr.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); elegir(); } };
+    });
+  }
+
+  // Jugador elegido en el grupo actual (se recuerda por grupo en este dispositivo)
+  function yoEn(g) {
+    if (!g.nombres.includes(S.jug[g.gi])) S.jug[g.gi] = g.nombres[0];
+    return S.jug[g.gi];
+  }
+
+  function renderJugador() {
+    const g = M.grupos[S.grupo], yo = yoEn(g), el = $('#elegir'), key = g.gi + '\n' + g.nombres.join('\n');
+    if (el.dataset.key !== key) {
+      el.dataset.key = key;
+      el.innerHTML = '<span class="etq">¿Quién sos?</span>' +
+        g.nombres.map((n, i) => '<button type="button" class="jb" data-i="' + i + '">' + esc(n) + '</button>').join('');
+      $$('.jb', el).forEach((b) => { b.onclick = () => { S.jug[g.gi] = g.nombres[+b.dataset.i]; guardarPrefs(); render(); }; });
+    }
+    $$('.jb', el).forEach((b) => b.setAttribute('aria-pressed', g.nombres[+b.dataset.i] === yo ? 'true' : 'false'));
+
+    const items = [], descansa = [], comp = new Set();
+    let partidos = 0, jugados = 0;
+    g.rondas.forEach((r, i) => {
+      const enA = r.a.includes(yo), enB = r.b.includes(yo);
+      if (!enA && !enB) {
+        descansa.push(i + 1);
+        items.push('<li class="descansa"><span class="r">Ronda ' + (i + 1) + '</span><span>' + (r.jugado ? 'Descansaste' : 'Descansás') + '</span></li>');
+        return;
+      }
+      partidos++;
+      const mia = enA ? r.a : r.b, rival = enA ? r.b : r.a, c = mia.find((q) => q !== yo);
+      comp.add(c);
+      let res = '';
+      if (r.jugado) {
+        jugados++;
+        const pro = enA ? r.ga : r.gb, con = enA ? r.gb : r.ga;
+        res = '<span class="res-l">' + (pro > con ? 'Ganaste' : pro === con ? 'Empataste' : 'Perdiste') + ' ' + pro + ' – ' + con + ' ' +
+          chipPts(ptsPartido(pro, con)) + '</span>';
+      }
+      items.push('<li class="juega"><span class="r">Ronda ' + (i + 1) + '</span><span>' + (r.jugado ? 'Jugaste' : 'Jugás') +
+        ' con <strong>' + esc(c) + '</strong> contra ' + nombres(rival) + res + '</span></li>');
+    });
+
+    const t = g.tabla, s = t.st[yo], puesto = t.orden.indexOf(yo), copa = copaDe(puesto);
+    let txt = esc(yo) + ', ';
+    if (g.rondas.some((r) => r.jugado)) {
+      txt += 'vas <b>' + (puesto + 1) + '°</b> en el ' + g.grupo + ' con <b>' + ptsTxt(s.pts) + '</b>' +
+        (copa ? ' (hoy entrás a la ' + copa.nombre + ')' : '') + '. ';
+      txt += 'Jugaste ' + jugados + ' de ' + plural(partidos, 'partido', 'partidos');
+    } else {
+      txt += 'jugás <b>' + plural(partidos, 'partido', 'partidos') + '</b>';
+    }
+    txt += ' con ' + plural(comp.size, 'compañero distinto', 'compañeros distintos') + '. ';
+    txt += descansa.length
+      ? 'Descansás en ' + (descansa.length === 1 ? 'la ronda' : 'las rondas') + ' <b>' + listaY(descansa) + '</b>.'
+      : 'No descansás ninguna ronda.';
+    $('#resumen').innerHTML = txt;
+    $('#linea').innerHTML = items.join('');
+  }
+
+  function renderPosiciones() {
+    const g = M.grupos[S.grupo], t = g.tabla, yo = S.jug[g.gi];
+    const jugadas = g.rondas.filter((r) => r.jugado).length;
+    $('#pos-tit').textContent = g.grupo + ' · ' + g.cancha;
+    $('#pos-sub').textContent = jugadas
+      ? jugadas + ' de ' + plural(g.rondas.length, 'ronda jugada', 'rondas jugadas')
+      : 'Todavía no hay resultados cargados';
+    $('#p-posiciones tbody').innerHTML = t.orden.map((n, i) => {
+      const s = t.st[n], dif = s.gf - s.gc, copa = copaDe(i);
+      return '<tr class="' + (n === yo ? 'yo' : '') + '"' + (copa ? ' style="--copa:' + copa.color + '"' : '') + '>' +
+        '<td class="ps">' + (i + 1) + '</td><td class="nm">' + esc(n) + '</td><td class="n pt">' + s.pts + '</td>' +
+        '<td class="n anc">' + s.pj + '</td><td class="n">' + s.g + '-' + s.e + '-' + s.p + '</td>' +
+        '<td class="n ' + (dif > 0 ? 'mas' : dif < 0 ? 'menos' : '') + '">' + (dif > 0 ? '+' : '') + dif + '</td>' +
+        '<td class="n anc">' + s.gf + '</td></tr>';
+    }).join('');
+    $('#pos-copas').innerHTML = COPAS.filter((c) => c.pos[0] < g.nombres.length).map((c) =>
+      '<li style="--copa:' + c.color + '"><i></i>' + c.nombre + ' · ' + (c.pos[0] + 1) + '° y ' + (c.pos[1] + 1) + '°</li>').join('');
+  }
+
+  // Ejemplos de "Cómo se puntúa" con los games configurados y nombres reales si hay
+  function pintarPuntuacion() {
+    const ng = M.games, r = M.grupos[0] && M.grupos[0].rondas[0];
+    const a = r ? r.a.map(esc).join(' + ') : 'Pareja 1', b = r ? r.b.map(esc).join(' + ') : 'Pareja 2';
+    const gana = Math.min(ng, Math.floor(ng / 2) + 2);
+    $('#pg-games').textContent = ng;
+    $('#ej-gana').innerHTML = '<span class="eq">' + a + '</span><span class="res">' + gana + ' – ' + (ng - gana) + '</span><span class="eq">' + b + '</span>' +
+      '<span class="chipn g">' + ptsTxt(PTS_GANA) + ' cada uno</span><span class="chipn p">' + ptsTxt(PTS_PIERDE) + ' cada uno</span>';
+    $('#ej-empate').hidden = ng % 2 !== 0;
+    $('#ej-empate').innerHTML = '<span class="eq">' + a + '</span><span class="res">' + ng / 2 + ' – ' + ng / 2 + '</span><span class="eq">' + b + '</span>' +
+      '<span class="chipn e">' + ptsTxt(PTS_EMPATA) + ' cada uno</span>';
+  }
+
+  function render() {
+    $$('#vista button').forEach((b) => b.setAttribute('aria-pressed', b.dataset.v === S.vista ? 'true' : 'false'));
+    if (!M) return;
+    const hay = M.grupos.length > 0;
+    $('#vacio').hidden = hay;
+    $('#contenido').hidden = !hay;
+    if (!hay) {
+      $('#vacio').textContent = 'Todavía no hay jugadores cargados. Cuando el admin arme los grupos, el fixture aparece acá.';
+      return;
+    }
+    S.grupo = Math.min(S.grupo, M.grupos.length - 1);
+    if (S.ronda == null) S.ronda = rondaActual(M.grupos[S.grupo]);
+
+    const cont = $('#grupos');
+    if (cont.childElementCount !== M.grupos.length) {
+      cont.innerHTML = M.grupos.map((g) => '<button type="button" data-g="' + g.gi + '">' + g.cancha + '<br><small>' + g.grupo + '</small></button>').join('');
+      $$('button', cont).forEach((b) => { b.onclick = () => { S.grupo = +b.dataset.g; guardarPrefs(); render(); }; });
+    }
+    $$('button', cont).forEach((b) => b.setAttribute('aria-pressed', +b.dataset.g === S.grupo ? 'true' : 'false'));
+
+    $('#p-cancha').hidden = S.vista !== 'cancha';
+    $('#p-tabla').hidden = S.vista !== 'tabla';
+    $('#p-jugador').hidden = S.vista !== 'jugador';
+    $('#p-posiciones').hidden = S.vista !== 'posiciones';
+    $('#fila-grupo').hidden = S.vista === 'tabla';
+
+    if (S.vista === 'cancha') renderCancha();
+    if (S.vista === 'tabla') renderTabla();
+    if (S.vista === 'jugador') renderJugador();
+    if (S.vista === 'posiciones') renderPosiciones();
+  }
+
+  function aplicar(st) {
+    if (!st || st.type !== 'state') return;
+    M = armarModelo(st);
+    $('#t-nombre').textContent = M.cfg.torneo_nombre || 'Super Americano';
+    $('#t-sub').textContent = M.jugadores + ' jugadores · ' + M.grupos.length + ' canchas · ' + plural(M.nRondas, 'ronda', 'rondas');
+    pintarPuntuacion();
+    render();
+  }
+
+  // ── Tiempo real: el mismo WebSocket que usa la app ──
+  function conectar() {
+    const ws = new WebSocket((location.protocol === 'https:' ? 'wss' : 'ws') + '://' + location.host + '/ws');
+    let ping;
+    const vivo = (ok) => {
+      $('#vivo').classList.toggle('ok', ok);
+      $('#vivo-txt').textContent = ok ? 'En vivo: los resultados se actualizan solos' : 'Reconectando…';
+    };
+    ws.onopen = () => { vivo(true); ping = setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 20000); };
+    ws.onmessage = (e) => { let d; try { d = JSON.parse(e.data); } catch (err) { return; } aplicar(d); };
+    ws.onclose = () => { vivo(false); clearInterval(ping); setTimeout(conectar, 2000); };
+  }
+
+  $$('#vista button').forEach((b) => { b.onclick = () => { S.vista = b.dataset.v; guardarPrefs(); render(); }; });
+  cargarPrefs(); aplicarFz(); render();
+  fetch('/api/state').then((r) => r.json()).then(aplicar).catch(() => {});
+  conectar();
+</script>
+</body>
+</html>

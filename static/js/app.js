@@ -32,6 +32,14 @@ const COLORES = [
 ];
 
 
+// ── Puntuación: ganar 2 · empatar 1 · perder 0 (cada jugador de la pareja) ───
+const PTS_GANA = 2, PTS_EMPATA = 1, PTS_PIERDE = 0;
+function ptsPartido(propios, rivales) {
+  return propios > rivales ? PTS_GANA : propios === rivales ? PTS_EMPATA : PTS_PIERDE;
+}
+function ptsLabel(n) { return n === 1 ? '1pt' : `${n}pts`; }
+
+
 // ── Roles ─────────────────────────────────────────────────────────────────────
 function esAdmin() { return S.role === 'admin' || S.role === 'superadmin'; }
 function esSuper() { return S.role === 'superadmin'; }
@@ -124,8 +132,8 @@ function updatePtsChips(data) {
       const res = (resultados || {})[`prel-${gi}-${ri}`] || {};
       if (res.ga == null || res.gb == null) return;
       const ga = +res.ga, gb = +res.gb;
-      const p1 = ga > gb ? '3pts' : ga === gb ? '1pt' : '0pts';
-      const p2 = gb > ga ? '3pts' : ga === gb ? '1pt' : '0pts';
+      const p1 = ptsLabel(ptsPartido(ga, gb));
+      const p2 = ptsLabel(ptsPartido(gb, ga));
       const el = document.getElementById(`chips-${gi}-${ri}`);
       if (el) el.innerHTML = chipsHTML(p1, p2);
     });
@@ -322,8 +330,8 @@ async function api(path, body) {
 
 function chipsHTML(p1, p2) {
   const cs = p =>
-    `${p === '3pts' ? 'background:#39FF14;color:#000;font-weight:800'
-      : p === '1pt'  ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700'
+    `${p === ptsLabel(PTS_GANA)   ? 'background:#39FF14;color:#000;font-weight:800'
+      : p === ptsLabel(PTS_EMPATA) ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700'
       : 'background:rgba(255,255,255,.08);color:#666'
     };border-radius:4px;padding:2px 8px;font-size:10px`;
   return `<span style="${cs(p1)}">${p1}</span>`

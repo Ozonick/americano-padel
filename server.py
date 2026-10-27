@@ -131,6 +131,11 @@ async def root():
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/beta")
+async def beta():
+    return FileResponse(STATIC_DIR / "beta.html")
+
+
 @app.get("/api/ping")
 async def ping():
     return {"ok": True, "ts": __import__("time").time()}

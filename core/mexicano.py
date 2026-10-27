@@ -7,6 +7,7 @@ Lógica completa del modo Mexicano:
 """
 import random as rnd
 from .db import get_db, mex_cfg_get, mex_cfg_set
+from .fixture import pts_partido
 
 
 # ── Consultas ─────────────────────────────────────────────────────────────────
@@ -36,8 +37,8 @@ def get_stats() -> dict:
     for p in partidos:
         p = dict(p)
         ga, gb   = p["games_a"] or 0, p["games_b"] or 0
-        pts_a    = 3 if ga > gb else 1 if ga == gb else 0
-        pts_b    = 3 if gb > ga else 1 if ga == gb else 0
+        pts_a    = pts_partido(ga, gb)
+        pts_b    = pts_partido(gb, ga)
 
         for j in [p["j1"], p["j2"]]:
             if j not in stats:

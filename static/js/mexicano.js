@@ -92,8 +92,8 @@ function renderMexicano() {
       let p1 = '', p2 = '';
       if (ga !== '' && gb !== '') {
         const a = +ga, b = +gb;
-        p1 = a > b ? '3pts' : a === b ? '1pt' : '0pts';
-        p2 = b > a ? '3pts' : a === b ? '1pt' : '0pts';
+        p1 = ptsLabel(ptsPartido(a, b));
+        p2 = ptsLabel(ptsPartido(b, a));
       }
       html += `<div class="partido-row" style="border-left:4px solid #29ABE2;padding-left:12px">
         <span class="g-pill" style="background:rgba(41,171,226,.15);color:#29ABE2;font-weight:800">${p.cancha}</span>

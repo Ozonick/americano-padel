@@ -50,8 +50,8 @@ function renderFixture() {
       let p1 = '', p2 = '';
       if (ga !== '' && gb !== '') {
         const a = +ga, b = +gb;
-        p1 = a > b ? '3pts' : a === b ? '1pt' : '0pts';
-        p2 = b > a ? '3pts' : a === b ? '1pt' : '0pts';
+        p1 = ptsLabel(ptsPartido(a, b));
+        p2 = ptsLabel(ptsPartido(b, a));
       }
 
       html += `<div style="padding:9px 12px;border-bottom:1px solid var(--brd);${p1 ? 'background:rgba(0,0,0,.1)' : ''}">
@@ -117,8 +117,8 @@ function autoFill(inputEl) {
   const [gi, ri] = pair.split('-');
   const chipsEl  = document.getElementById(`chips-${gi}-${ri}`);
   if (chipsEl && ga + gb > 0) {
-    const p1 = ga > gb ? '3pts' : ga === gb ? '1pt' : '0pts';
-    const p2 = gb > ga ? '3pts' : ga === gb ? '1pt' : '0pts';
+    const p1 = ptsLabel(ptsPartido(ga, gb));
+    const p2 = ptsLabel(ptsPartido(gb, ga));
     chipsEl.innerHTML = chipsHTML(p1, p2);
   }
 
@@ -148,8 +148,8 @@ function calcStats() {
       const ga = +res.ga, gb = +res.gb;
       [j1, j2].forEach(j => { if (stats[j]) { stats[j].gf += ga; stats[j].gc += gb; stats[j].pj++; } });
       [j3, j4].forEach(j => { if (stats[j]) { stats[j].gf += gb; stats[j].gc += ga; stats[j].pj++; } });
-      const p1 = ga > gb ? 3 : ga === gb ? 1 : 0;
-      const p2 = gb > ga ? 3 : ga === gb ? 1 : 0;
+      const p1 = ptsPartido(ga, gb);
+      const p2 = ptsPartido(gb, ga);
       [j1, j2].forEach(j => { if (stats[j]) stats[j].pts += p1; });
       [j3, j4].forEach(j => { if (stats[j]) stats[j].pts += p2; });
     });

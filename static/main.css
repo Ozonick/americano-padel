@@ -24,6 +24,10 @@ input{font-family:'DM Sans',sans-serif}
 .role-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
 .role-admin{background:rgba(41,171,226,.15);color:#29ABE2}
 .role-viewer{background:var(--surf2);color:var(--txt2)}
+.beta-btn{font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;text-decoration:none;white-space:nowrap;
+  background:#FFD700;color:#0a0a0a;transition:opacity .15s}
+.beta-btn:hover{opacity:.85}
+.beta-corto{display:none}
 .ws-dot{width:8px;height:8px;border-radius:50%;background:var(--txt3);flex-shrink:0}
 .ws-dot.ok{background:#29ABE2}
 
@@ -163,6 +167,10 @@ input{font-family:'DM Sans',sans-serif}
   .mob-menu{display:flex!important}
   .e-names{font-size:12px}
   .partido-row{padding:9px 12px;gap:8px}
+  .hdr{padding:12px 14px;gap:10px}
+  .role-badge{display:none}
+  .beta-largo{display:none}
+  .beta-corto{display:inline}
 }
 .mob-menu{display:none;align-items:center;justify-content:center;
   width:34px;height:34px;background:var(--surf2);border:1px solid var(--brd);

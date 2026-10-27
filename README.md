@@ -65,7 +65,7 @@ Sidebar → "Nuevo torneo" → confirmar → borra todo y empieza de cero.
 
 ## Puntuación
 
-- Ganado: 3 puntos
+- Ganado: 2 puntos
 - Empate: 1 punto  
 - Perdido: 0 puntos
 - Desempate: Diferencia de games → Games a favor
