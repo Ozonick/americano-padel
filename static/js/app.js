@@ -53,6 +53,7 @@ function connectWS() {
 
   ws.onopen = () => {
     document.getElementById('ws-dot').classList.add('ok');
+    if (esAdmin()) restaurarAuth();   // el servidor pudo reiniciarse con otra contraseña
     S._ping = setInterval(() => { if (ws.readyState === 1) ws.send('ping'); }, 20000);
   };
 
@@ -231,10 +232,23 @@ async function restaurarAuth() {
       S.role = data.role || 'admin';
       S.password = saved.password;
       updateRoleUI(); renderTab();
+    } else if (esAdmin()) {
+      sesionVencida();
     } else {
       localStorage.removeItem('auth');
     }
   } catch(e) { /* sin conexión: se reintenta en la próxima carga */ }
+}
+
+// La contraseña guardada dejó de valer (por ejemplo, se cambió en Render):
+// salir del modo admin y pedirla de nuevo, en vez de dejar campos que no guardan.
+function sesionVencida() {
+  S.role = 'viewer'; S.password = '';
+  try { localStorage.removeItem('auth'); } catch(e) {}
+  updateRoleUI(); renderTab();
+  showLogin();
+  document.getElementById('login-err').textContent =
+    'La contraseña de admin cambió o ya no es válida. Ingresala de nuevo.';
 }
 
 function updateRoleUI() {
@@ -317,6 +331,7 @@ async function api(path, body) {
       body:    JSON.stringify(body),
     });
     if (!res.ok) {
+      if (res.status === 401 && esAdmin()) { sesionVencida(); return { ok: false }; }
       const e = await res.json();
       toast('Error: ' + (e.detail || res.status));
       return { ok: false };

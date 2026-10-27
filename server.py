@@ -59,6 +59,17 @@ app.add_middleware(
 )
 
 
+@app.middleware("http")
+async def revalidar_archivos(request, call_next):
+    """Páginas y archivos estáticos: el navegador siempre pregunta si cambiaron (304 si no),
+    así después de cada deploy nadie se queda con HTML/JS viejos mezclados con nuevos."""
+    resp = await call_next(request)
+    path = request.url.path
+    if path in ("/", "/beta") or path.startswith("/static/"):
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 # ── WebSocket manager ─────────────────────────────────────────────────────────
 
 class ConnectionManager:

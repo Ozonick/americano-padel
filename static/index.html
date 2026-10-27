@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/static/panteras.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/main.css">
+<link rel="stylesheet" href="/static/main.css?v=20261027">
 </head>
 <body>
 
@@ -25,7 +25,10 @@
     <div class="hdr-sub"  id="hdr-sub">Cargando...</div>
   </div>
   <div class="hdr-right">
-    <a class="beta-btn" href="/beta" aria-label="Versión beta" title="Probar la nueva versión del fixture"><span class="beta-largo">Versión beta</span><span class="beta-corto">Beta</span></a>
+    <nav class="ver-switch" aria-label="Versión de la app">
+      <a class="ver-op" href="/" data-ver="actual" aria-current="page">Actual</a>
+      <a class="ver-op" href="/beta" data-ver="beta" title="Probar la nueva versión del fixture">Beta</a>
+    </nav>
     <div class="ws-dot" id="ws-dot" title="Conexión en tiempo real"></div>
     <span class="role-badge" id="role-badge">Viewer</span>
     <button class="btn-ghost" style="padding:5px 12px;font-size:12px" onclick="showLogin()">Admin</button>
@@ -143,12 +146,12 @@
 </div>
 
 <!-- ── Scripts (orden importa: app primero, luego los módulos) ── -->
-<script src="/static/js/app.js"></script>
-<script src="/static/js/americano.js"></script>
-<script src="/static/js/mexicano.js"></script>
-<script src="/static/js/triangular.js"></script>
-<script src="/static/js/torneo.js"></script>
-<script src="/static/js/beta.js"></script>
+<script src="/static/js/app.js?v=20261027"></script>
+<script src="/static/js/americano.js?v=20261027"></script>
+<script src="/static/js/mexicano.js?v=20261027"></script>
+<script src="/static/js/triangular.js?v=20261027"></script>
+<script src="/static/js/torneo.js?v=20261027"></script>
+<script src="/static/js/beta.js?v=20261027"></script>
 
 </body>
 </html>

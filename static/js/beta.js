@@ -361,14 +361,16 @@
     aplicarFontSizeOrig();
     let n = 0;
     try { n = parseInt(localStorage.getItem('fz')) || 0; } catch (e) {}
-    document.documentElement.dataset.btFz = n;
+    document.documentElement.dataset.letra = n;
   };
   window.aplicarFontSize();
 
-  // Botones de las vistas nuevas (un solo listener para todo el contenido)
-  document.getElementById('main-content').addEventListener('click', (e) => {
+  // Botones de las vistas nuevas (un solo listener para todo el contenido).
+  // Solo cuentan los botones de adentro del contenido: cualquier otro clic (inputs, formularios) sigue de largo.
+  const contenido = document.getElementById('main-content');
+  contenido.addEventListener('click', (e) => {
     const t = e.target.closest('[data-bt-vista],[data-bt-ronda],[data-bt-jug],[data-bt-fz]');
-    if (!t) return;
+    if (!t || !contenido.contains(t)) return;
     const d = t.dataset;
     let sel;
     if (d.btVista)           { B.vista = d.btVista; guardarPrefs(); sel = `[data-bt-vista="${d.btVista}"]`; }
@@ -379,18 +381,13 @@
     document.querySelector(`#main-content ${sel}`)?.focus({ preventScroll: true });
   });
 
-  // Header: el botón amarillo pasa a ser "volver a la versión actual"
+  // Header: el selector Actual / Beta marca que estamos en la beta
   document.title = 'Panteras Pádel · Beta';
-  document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/static/beta.css">');
-  const btn = document.querySelector('.beta-btn');
-  if (btn) {
-    btn.href = '/';
-    btn.classList.add('en-beta');
-    btn.title = 'Volver a la versión actual';
-    btn.setAttribute('aria-label', 'Volver a la versión actual');
-    btn.querySelector('.beta-largo').textContent = '← Versión actual';
-    btn.querySelector('.beta-corto').textContent = '← Actual';
-  }
+  document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/static/beta.css?v=20261027">');
+  document.querySelectorAll('.ver-op').forEach(a => {
+    if (a.dataset.ver === 'beta') a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+  });
 
   // El estado puede haber llegado por WebSocket mientras se descargaba este archivo
   if (S.state) renderTab();

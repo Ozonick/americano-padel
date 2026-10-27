@@ -1,17 +1,16 @@
 /* beta.css — Tablero de la versión beta (/beta). Lo carga static/js/beta.js. */
 
-/* ── Header: botón para volver a la versión actual ── */
-.beta-btn.en-beta{background:transparent;color:#FFD700;border:1px solid rgba(255,215,0,.45)}
+/* ── Header ── */
 @media(max-width:700px){
   .hdr > div:nth-of-type(2){min-width:0}
   .hdr-name,.hdr-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Con letra grande no entra el nombre: queda el logo */
-  html[data-bt-fz="1"] .hdr > div:nth-of-type(2),
-  html[data-bt-fz="2"] .hdr > div:nth-of-type(2){display:none}
+  html[data-letra="1"] .hdr > div:nth-of-type(2),
+  html[data-letra="2"] .hdr > div:nth-of-type(2){display:none}
 }
 /* Escala extra de las fichas según el tamaño de letra elegido */
-html[data-bt-fz="1"]{--bt-esc:1.2}
-html[data-bt-fz="2"]{--bt-esc:1.4}
+html[data-letra="1"]{--bt-esc:1.2}
+html[data-letra="2"]{--bt-esc:1.4}
 
 /* ── Barra: forma de ver + tamaño de letra ── */
 .bt-barra{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:14px}
@@ -43,8 +42,10 @@ html[data-bt-fz="2"]{--bt-esc:1.4}
 
 /* ── Canchas ── */
 .bt-canchas{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
-.bt-canchas.una{grid-template-columns:minmax(0,560px)}
-.bt-canchas .card{margin-bottom:0}
+.bt-canchas.una{grid-template-columns:minmax(0,640px)}
+/* Cada tarjeta es un "container": el resultado de abajo crece con el ancho de la cancha */
+.bt-canchas .card{margin-bottom:0;container-type:inline-size}
+.bt-canchas .card-title{font-size:clamp(13px,3cqw,17px)}
 .bt-caja{padding:12px 12px 0}
 .bt-pista-caja{position:relative;width:100%;aspect-ratio:100/72;container-type:inline-size}
 .bt-pista{position:absolute;inset:0 0 30.56% 0;background:#1E6D9C;border-radius:6px;overflow:hidden}
@@ -65,14 +66,19 @@ html[data-bt-fz="2"]{--bt-esc:1.4}
 .bt-sin{padding:28px 16px;text-align:center;font-size:13px;color:var(--txt2)}
 
 /* Resultado debajo de cada cancha */
-.bt-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:10px 12px 12px}
-.bt-par{min-width:0;font-size:12px;font-weight:600;line-height:1.35;color:var(--txt2);overflow-wrap:anywhere}
+.bt-score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+  gap:clamp(8px,2.5cqw,16px);padding:clamp(10px,2.6cqw,18px) clamp(12px,3.4cqw,22px) clamp(12px,3cqw,20px)}
+.bt-par{min-width:0;font-size:clamp(13px,3.3cqw,19px);font-weight:600;line-height:1.35;color:var(--txt);overflow-wrap:anywhere}
 .bt-par.der{text-align:right}
 .bt-par.gano{color:#39FF14}
-.bt-centro{display:flex;flex-direction:column;align-items:center;gap:4px}
-.bt-res{font-family:'DM Mono',monospace;font-size:20px;font-weight:600}
-.bt-pend{font-size:12px;color:var(--txt2)}
+.bt-centro{display:flex;flex-direction:column;align-items:center;gap:clamp(4px,1.2cqw,8px)}
+.bt-score .games-wrap{gap:clamp(6px,1.8cqw,12px)}
+.bt-score .g-in{width:clamp(48px,12cqw,76px);height:clamp(40px,9.5cqw,58px);font-size:clamp(18px,4.8cqw,28px)}
+.bt-res{font-family:'DM Mono',monospace;font-size:clamp(22px,6cqw,36px);font-weight:600}
+.bt-pend{font-size:clamp(12px,2.8cqw,15px);color:var(--txt2)}
 .bt-chips{display:flex;align-items:center;min-height:16px}
+/* Los chips de puntos vienen con tamaño fijo desde la app: acá se agrandan con la tarjeta */
+.bt-score .bt-chips > span{font-size:clamp(10px,2.5cqw,14px)!important}
 
 /* ── Tabla ronda × cancha ── */
 .bt-tabla{overflow-x:auto}
