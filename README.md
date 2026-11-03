@@ -63,7 +63,7 @@ ADMIN_PASSWORD=tu-clave TORNEO_PASSWORD=otra-clave uvicorn server:app --reload
 ### Flujo recomendado:
 
 1. **Admin → Configuración**: nombre del torneo, canchas, tiempo de cancha (90 min), games por partido (16)
-   - La app te sugiere automáticamente cuántas rondas entran
+   - La app te muestra con cuántas rondas todos juegan la misma cantidad de partidos, y cuáles entran en tu tiempo
 2. **Admin → Jugadores**: ingresá los 18 nombres → "Sortear" para grupos random → ajustá si querés → "Guardar"
 3. **Fixture**: a medida que terminan los partidos, el admin carga los games
    - Todos los celulares se actualizan en tiempo real sin recargar

@@ -10,7 +10,7 @@ function renderFixture() {
     return `<div class="empty"><div class="empty-ico">👥</div>
       <div style="font-size:14px;margin-top:8px">No hay jugadores cargados.</div></div>`;
 
-  const rp  = parseInt(config.rondas_prel)   || 7;
+  const rp  = parseInt(config.rondas_prel)   || 6;
   const ng  = parseInt(config.games_partido) || 16;
   const dis = !esAdmin() ? 'disabled' : '';
 
@@ -347,32 +347,116 @@ function renderConfig() {
       <div class="param-row"><span class="param-lbl">Canchas / grupos</span>
         <input class="p-in" id="cfg-canchas" type="number" min="1" max="8" value="${cfg.canchas || 3}" oninput="updateSug()"></div>
       <div class="param-row"><span class="param-lbl">Rondas preliminar</span>
-        <input class="p-in" id="cfg-rondas" type="number" min="1" max="15" value="${cfg.rondas_prel || 7}"></div>
+        <input class="p-in" id="cfg-rondas" type="number" min="1" max="40" value="${cfg.rondas_prel || 6}" oninput="updateSug()"></div>
       <div class="param-row"><span class="param-lbl">Rondas finales</span>
         <input class="p-in" id="cfg-rondas-f" type="number" min="1" max="10" value="${cfg.rondas_final || 5}"></div>
       <div class="param-row"><span class="param-lbl">Games por partido</span>
         <input class="p-in" id="cfg-games" type="number" min="4" max="40" value="${cfg.games_partido || 16}" oninput="updateSug()"></div>
       <div class="param-row"><span class="param-lbl">Tiempo de cancha (min)</span>
         <input class="p-in" id="cfg-tiempo" type="number" min="30" max="240" value="${cfg.tiempo_cancha || 90}" oninput="updateSug()"></div>
-      <div class="hint-box" id="cfg-sug" style="line-height:1.7">
-        ⏱ Con <strong>${cfg.tiempo_cancha || 90} min</strong> y ${s.n_x_grupo || 6} jug/grupo:<br>
-        Máx sin repetir compañero: <strong>${s.rondas_max_sin_repetir || 5} rondas</strong><br>
-        Por tiempo: <strong>${s.rondas_prel_x_tiempo || '?'}</strong> rondas disponibles<br>
-        → Sugerido: <strong>${s.rondas_prel || '?'} prelim</strong> + ${s.rondas_final || 4} final · ~${s.tiempo_total_est || '?'} min total
+      <div class="hint-box" id="cfg-sug">
+        ${sugHTML(s, cfg.tiempo_cancha || 90, parseInt(cfg.rondas_prel) || 6)}
       </div>
       <button class="btn-main" onclick="saveConfig()">Guardar configuración</button>
     </div></div>`;
 }
 
+const cantPartidos = n => `${n} ${n === 1 ? 'partido' : 'partidos'}`;
+
+function sugPartidos(op) {
+  return op.partidos_min === op.partidos_max
+    ? `${cantPartidos(op.partidos_min)} c/u`
+    : `${op.partidos_min} a ${cantPartidos(op.partidos_max)}`;
+}
+
+function sugCompaneros(op) {
+  if (op.comp_min >= 1) {
+    const detalle = op.comp_min < op.comp_max ? 'alguna pareja repite'
+      : op.comp_min === 1 ? 'sin repetir' : `cada pareja ${op.comp_min} veces`;
+    return op.todos ? detalle : `todos con todos, ${detalle}`;
+  }
+  return op.comp_max === 1 ? 'sin repetir compañero' : 'repite compañeros';
+}
+
+// Cómo quedan los partidos con las rondas que están escritas en el campo
+function sugEstado(rondas, tamanos) {
+  if (!tamanos.length || !(rondas > 0)) return '';
+  const desparejos = tamanos.filter(n => rondas * 4 % n !== 0);
+  if (desparejos.length) {
+    const detalle = desparejos.map(n => {
+      const menos = Math.floor(rondas * 4 / n);
+      return `${tamanos.length > 1 ? `en los grupos de ${n}, ` : ''}unos juegan ${cantPartidos(menos + 1)} y otros ${menos}`;
+    }).join(' · ');
+    return `<div class="sug-estado warn">⚠️ Con ${rondas} rondas no queda parejo: ${detalle}.</div>`;
+  }
+  if (tamanos.length > 1) {
+    const detalle = tamanos.map(n => `los grupos de ${n} juegan ${cantPartidos(rondas * 4 / n)}`).join(' y ');
+    return `<div class="sug-estado warn">⚠️ Con ${rondas} rondas cada grupo queda parejo por dentro, pero ${detalle}.</div>`;
+  }
+  return `<div class="sug-estado ok">✓ Con ${rondas} rondas todos juegan ${cantPartidos(rondas * 4 / tamanos[0])}.</div>`;
+}
+
+function sugHTML(s, tiempo, rondas) {
+  const grupos  = s.tamanos || [];
+  const tamanos = [...new Set(grupos.filter(n => n >= 4))].sort((a, b) => a - b);
+  const opciones = s.opciones || [];
+  const fuera = opciones.some(op => !op.entra);
+
+  let html = tamanos.length === 1
+    ? `<div><strong>${tamanos[0]} jugadores por grupo:</strong> cada ronda juegan 4 y descansan ${tamanos[0] - 4}.</div>`
+    : `<div><strong>Grupos de distinto tamaño (${grupos.join(', ')}):</strong> entre grupos no se puede jugar lo mismo. Para eso, dejalos todos del mismo tamaño.</div>`;
+
+  if (grupos.some(n => n < 4))
+    html += `<div class="sug-estado warn">⚠️ Un grupo tiene menos de 4 jugadores y se queda sin partidos.</div>`;
+
+  if (opciones.length) {
+    html += `<div style="margin-top:6px">Para que ${tamanos.length === 1 ? 'todos jueguen lo mismo' : 'cada grupo quede parejo por dentro'}, elegí:</div>`;
+    opciones.forEach(op => {
+      html += `<button type="button" class="sug-op ${op.rondas === rondas ? 'activa' : ''} ${op.entra ? '' : 'fuera'}"
+        onclick="elegirRondas(${op.rondas})">
+        <span class="sug-n">${op.rondas}</span>
+        <span class="sug-txt"><strong>${sugPartidos(op)}</strong> · ${sugCompaneros(op)} · ~${op.minutos} min</span>
+        <span class="sug-tags">
+          ${op.rondas === s.rondas_prel ? '<span class="sug-tag">Sugerido</span>' : ''}
+          ${op.todos ? '<span class="sug-tag todos">Todos con todos</span>' : ''}
+        </span>
+      </button>`;
+    });
+    if (opciones.every(op => !op.entra))
+      html += `<div class="sug-nota">Ninguna entra en tus ${tiempo} min de cancha, contando ~${s.mins_finales} min de finales: te sugerimos la más corta. Con menos games por partido entran más rondas.</div>`;
+    else if (fuera)
+      html += `<div class="sug-nota">Las atenuadas no entran en tus ${tiempo} min de cancha, contando ~${s.mins_finales} min de finales.</div>`;
+  } else if (tamanos.length) {
+    html += `<div class="sug-estado warn">⚠️ Con estos grupos no hay una cantidad de rondas (hasta 40) que deje a todos parejos.</div>`;
+  }
+
+  html += sugEstado(rondas, tamanos);
+
+  if (S.state.config.fixture_algo === '1')
+    html += `<div class="sug-nota">Este torneo ya tiene resultados y sigue con las combinaciones con las que empezó, para no mezclar lo cargado. Las nuevas se aplican al tocar 🗑 Nuevo torneo.</div>`;
+  return html;
+}
+
 async function updateSug() {
   const t = document.getElementById('cfg-tiempo')?.value || 90;
   const g = document.getElementById('cfg-games')?.value  || 16;
-  const res = await fetch(`/api/sugerencia?tiempo=${t}&games=${g}`);
+  const c = document.getElementById('cfg-canchas')?.value || 3;
+  const { config, jugadores, grupos } = S.state;
+  const mismasCanchas = String(c) === String(config.canchas);
+  const params = new URLSearchParams({ tiempo: t, games: g, canchas: c, jugadores: jugadores?.length || 18 });
+  if (mismasCanchas && grupos?.length) params.set('tamanos', grupos.map(x => x.length).join(','));
+
+  const res = await fetch(`/api/sugerencia?${params}`);
   const s   = await res.json();
   const el  = document.getElementById('cfg-sug');
-  if (el) el.innerHTML = `⏱ Con <strong>${t} min</strong> y ${s.n_x_grupo} jug/grupo:<br>
-    Máx sin repetir: <strong>${s.rondas_max_sin_repetir} rondas</strong> · Por tiempo: ${s.rondas_prel_x_tiempo}<br>
-    → Sugerido: <strong>${s.rondas_prel} prelim</strong> + ${s.rondas_final} final · ~${s.tiempo_total_est} min total`;
+  if (!el) return;
+  el.innerHTML = sugHTML(s, t, parseInt(document.getElementById('cfg-rondas')?.value))
+    + (mismasCanchas || !jugadores?.length ? '' : `<div class="sug-nota">Para repartir en ${c} canchas, guardá y volvé a sortear en Jugadores.</div>`);
+}
+
+function elegirRondas(r) {
+  const el = document.getElementById('cfg-rondas');
+  if (el) { el.value = r; updateSug(); }
 }
 
 async function saveConfig() {
@@ -445,8 +529,10 @@ function renderJugadores() {
 function addJug() {
   const nc  = parseInt(S.state?.config?.canchas) || 3;
   const n   = S.jugadores_edit.length;
-  const tam = Math.max(4, Math.round((n + 1) / nc));
-  S.jugadores_edit.push({ nombre: '', grupo: Math.floor(n / tam), orden: n });
+  // Va al grupo con menos jugadores, para que queden lo más parejos posible
+  const tam = Array(nc).fill(0);
+  S.jugadores_edit.forEach(j => { if ((j.grupo || 0) < nc) tam[j.grupo || 0]++; });
+  S.jugadores_edit.push({ nombre: '', grupo: tam.indexOf(Math.min(...tam)), orden: n });
   renderTab();
 }
 function removeJug() {

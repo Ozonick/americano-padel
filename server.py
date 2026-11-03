@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from core.db      import init_db, get_db, cfg_get, cfg_set, mex_cfg_get, mex_cfg_set
 from core.state   import get_full_state
-from core.fixture import calcular_rondas_sugeridas
+from core.fixture import calcular_rondas_sugeridas, repartir_grupos
 import core.mexicano as mexicano
 import core.torneo   as torneo
 
@@ -229,6 +229,7 @@ async def reset(req: ResetReq):
         con.execute("DELETE FROM resultados")
         con.execute("DELETE FROM jugadores")
         con.execute("UPDATE config SET value='config' WHERE key='estado'")
+        con.execute("UPDATE config SET value='2' WHERE key='fixture_algo'")
     await manager.broadcast(get_full_state())
     return {"ok": True}
 
@@ -240,11 +241,12 @@ async def shuffle(req: ShuffleReq):
     nombres = [n for n in req.nombres if n.strip()]
     random.shuffle(nombres)
     nc  = int(cfg_get("canchas") or 3)
-    tam = max(4, round(len(nombres) / nc))
-    jug = [
-        {"nombre": n, "grupo": i // tam, "orden": i % tam}
-        for i, n in enumerate(nombres)
-    ]
+    jug = []
+    for g, tam in enumerate(repartir_grupos(len(nombres), nc)):
+        jug += [
+            {"nombre": n, "grupo": g, "orden": o}
+            for o, n in enumerate(nombres[len(jug):len(jug) + tam])
+        ]
     with get_db() as con:
         con.execute("DELETE FROM jugadores")
         for j in jug:
@@ -262,8 +264,10 @@ async def sugerencia(
     games:     int = 16,
     jugadores: int = 18,
     canchas:   int = 3,
+    tamanos:   str = "",
 ):
-    return calcular_rondas_sugeridas(tiempo, games, jugadores, canchas)
+    grupos = [int(t) for t in tamanos.split(",") if t.isdecimal()]
+    return calcular_rondas_sugeridas(tiempo, games, jugadores, canchas, grupos)
 
 
 # ── Rutas Mexicano ────────────────────────────────────────────────────────────

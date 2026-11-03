@@ -58,6 +58,23 @@ input{font-family:'DM Sans',sans-serif}
 .p-in:focus{border-color:#29ABE2}
 .hint-box{background:rgba(41,171,226,.1);border:1px solid rgba(41,171,226,.25);
   border-radius:var(--rsm);padding:10px 12px;font-size:12px;color:#29ABE2;margin-top:8px;line-height:1.6}
+.sug-op{display:flex;align-items:center;gap:10px;width:100%;margin-top:5px;padding:7px 10px;
+  background:var(--surf2);border:1px solid var(--brd);border-radius:var(--rsm);
+  color:var(--txt2);font-size:12px;line-height:1.35;text-align:left;cursor:pointer}
+.sug-op:hover{border-color:var(--brd2)}
+.sug-op strong{color:var(--txt)}
+.sug-op.activa{background:rgba(41,171,226,.16);border-color:#29ABE2}
+.sug-op.fuera .sug-txt{opacity:.6}
+.sug-n{flex:0 0 26px;font-family:'DM Mono',monospace;font-size:16px;font-weight:500;color:var(--txt);text-align:center}
+.sug-txt{flex:1;min-width:0}
+.sug-tags{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.sug-tags:empty{display:none}
+.sug-tag{padding:2px 7px;border-radius:10px;background:var(--amber);color:#000;font-size:10px;font-weight:700;white-space:nowrap}
+.sug-tag.todos{background:var(--green)}
+.sug-estado{margin-top:8px;font-weight:600}
+.sug-estado.ok{color:var(--green)}
+.sug-estado.warn{color:var(--amber)}
+.sug-nota{margin-top:6px;font-size:11px;color:var(--txt2)}
 .btn-main{width:100%;padding:10px;background:var(--green);border:none;border-radius:var(--r);
   color:#0a0a0a;font-size:14px;font-weight:600;margin-top:6px;transition:opacity .15s}
 .btn-main:hover{opacity:.85}
@@ -169,7 +186,14 @@ input{font-family:'DM Sans',sans-serif}
   .mob-menu{display:flex!important}
   .e-names{font-size:12px}
   .partido-row{padding:9px 12px;gap:8px}
-  .hdr{padding:12px 14px;gap:10px}
+  .hdr{padding:12px 14px;gap:8px}
+  .hdr > div:nth-of-type(2){flex:1;min-width:0}
+  .hdr-name,.hdr-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hdr-name{font-size:14px}
+  .hdr-logo,.hdr-right,.mob-menu{flex:none}
+  .hdr-right{gap:6px}
+  .hdr-right .btn-ghost{width:min-content;padding:5px 8px!important}
+  .hdr .mob-menu{margin-right:0}
   .role-badge{display:none}
   .ver-op{font-size:11px;padding:5px 9px}
 }

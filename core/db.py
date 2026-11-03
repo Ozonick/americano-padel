@@ -44,7 +44,7 @@ def init_db():
         """)
         for key, val in [
             ("canchas",       "3"),
-            ("rondas_prel",   "7"),
+            ("rondas_prel",   "6"),
             ("rondas_final",  "5"),
             ("games_partido", "16"),
             ("tiempo_cancha", "90"),
@@ -52,6 +52,16 @@ def init_db():
             ("torneo_nombre", "Super Americano"),
         ]:
             con.execute("INSERT OR IGNORE INTO config VALUES (?,?)", (key, val))
+
+        # Los resultados se guardan por número de ronda: un torneo que ya tenía
+        # resultados sigue con su fixture ("1") hasta el próximo "Nuevo torneo".
+        ya_jugado = con.execute(
+            "SELECT 1 FROM resultados WHERE id LIKE 'prel-%' LIMIT 1"
+        ).fetchone()
+        con.execute(
+            "INSERT OR IGNORE INTO config VALUES ('fixture_algo',?)",
+            ("1" if ya_jugado else "2",),
+        )
 
         for key, val in [
             ("canchas",      "3"),

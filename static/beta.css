@@ -2,8 +2,6 @@
 
 /* ── Header ── */
 @media(max-width:700px){
-  .hdr > div:nth-of-type(2){min-width:0}
-  .hdr-name,.hdr-sub{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   /* Con letra grande no entra el nombre: queda el logo */
   html[data-letra="1"] .hdr > div:nth-of-type(2),
   html[data-letra="2"] .hdr > div:nth-of-type(2){display:none}

@@ -41,7 +41,7 @@
   // ── Modelo: grupos con sus rondas y resultados ────────────────────────────
   function modelo() {
     const { grupos, fixtures_prel, resultados, config } = S.state;
-    const rp = parseInt(config?.rondas_prel) || 7;
+    const rp = parseInt(config?.rondas_prel) || 6;
     return (grupos || []).map((noms, gi) => ({
       gi, nombres: noms, col: COLORES[gi % COLORES.length],
       rondas: ((fixtures_prel || [])[gi] || []).slice(0, rp).map(([j1, j2, j3, j4], ri) => {
@@ -383,7 +383,7 @@
 
   // Header: el selector Actual / Beta marca que estamos en la beta
   document.title = 'Panteras Pádel · Beta';
-  document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/static/beta.css?v=20261027">');
+  document.head.insertAdjacentHTML('beforeend', '<link rel="stylesheet" href="/static/beta.css?v=20261102">');
   document.querySelectorAll('.ver-op').forEach(a => {
     if (a.dataset.ver === 'beta') a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
