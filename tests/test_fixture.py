@@ -14,15 +14,21 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import core.db as db
 from core.fixture import (
-    calcular_rondas_sugeridas, gen_fixture, rondas_parejas, repartir_grupos, _largo_secuencia,
+    FIXTURE_ACTUAL, calcular_rondas_sugeridas, gen_fixture, gen_fixture_anterior,
+    rondas_parejas, repartir_grupos, _largo_secuencia,
 )
 
 TAMANOS = range(4, 17)
 
-SECUENCIA_6 = [
-    ("a", "b", "c", "d"), ("a", "e", "b", "f"), ("c", "e", "d", "f"),
-    ("a", "c", "b", "e"), ("b", "d", "e", "f"), ("a", "d", "c", "f"),
-]
+
+def partidos(texto):
+    return [tuple(p) for p in texto.split()]
+
+
+SECUENCIAS_6 = {
+    "2": partidos("abcd aebf cedf acbe bdef adcf afbc abde cdef"),
+    "3": partidos("abcd acef bedf aebc bdcf afde bfce adbe acdf"),
+}
 
 
 def medir(n, rondas):
@@ -80,12 +86,30 @@ class Combinaciones(unittest.TestCase):
                 self.assertFalse({x[:2], x[2:]} & {y[:2], y[2:]}, f"{n} jugadores: {x} y {y}")
 
     def test_seis_jugadores(self):
-        # (rondas, compañeros min-max, rivales min-max)
-        esperado = [(3, 0, 1, 0, 2), (6, 0, 1, 1, 2), (7, 0, 1, 1, 3), (9, 1, 2, 2, 3), (12, 1, 2, 3, 4)]
-        for r, cmin, cmax, rmin, rmax in esperado:
+        # rondas: (compañeros min-max, rivales min-max, juntos en cancha min-max)
+        esperado = {
+            3:  ((0, 1), (0, 2), (1, 2)),
+            6:  ((0, 1), (1, 2), (2, 3)),
+            9:  ((1, 2), (2, 3), (3, 4)),
+            12: ((1, 2), (3, 4), (4, 6)),
+        }
+        for r, (rango_comp, rango_riv, rango_juntos) in esperado.items():
             _, comp, riv = medir(6, r)
-            self.assertEqual((min(comp), max(comp)), (cmin, cmax), f"compañeros en {r} rondas")
-            self.assertEqual((min(riv), max(riv)), (rmin, rmax), f"rivales en {r} rondas")
+            juntos = [c + v for c, v in zip(comp, riv)]
+            self.assertEqual((min(comp), max(comp)), rango_comp, f"compañeros en {r} rondas")
+            self.assertEqual((min(riv), max(riv)), rango_riv, f"rivales en {r} rondas")
+            self.assertEqual((min(juntos), max(juntos)), rango_juntos, f"juntos en {r} rondas")
+
+    def test_el_companero_repetido_no_es_de_los_rivales_de_tres_veces(self):
+        # El caso real: Guillermo y chevi coincidían en 5 de los 6 partidos de Guillermo
+        _, comp, riv = medir(6, 9)
+        for c, v in zip(comp, riv):
+            self.assertLessEqual(c + v, 4)
+
+    def test_seis_jugadores_no_descansan_dos_rondas_seguidas(self):
+        fx = gen_fixture(list(range(6)), 9)
+        for x, y in zip(fx, fx[1:]):
+            self.assertEqual(set(x) | set(y), set(range(6)), f"{x} y {y}")
 
     def test_vuelta_completa_todas_las_parejas_por_igual(self):
         for n, veces in [(4, 1), (5, 1), (6, 2), (7, 2), (8, 1), (9, 1)]:
@@ -107,7 +131,13 @@ class Estabilidad(unittest.TestCase):
     def test_la_secuencia_no_cambia_sin_querer(self):
         # Si esto falla cambió el fixture: los resultados de un torneo en curso
         # quedarían en otros partidos. Un cambio a propósito necesita otro fixture_algo.
-        self.assertEqual(gen_fixture(list("abcdef"), 6), SECUENCIA_6)
+        for version, esperada in SECUENCIAS_6.items():
+            self.assertEqual(gen_fixture(list("abcdef"), 9, version), esperada, f"versión {version}")
+        self.assertEqual(gen_fixture(list("abcdef"), 9), SECUENCIAS_6[FIXTURE_ACTUAL])
+
+    def test_version_1_es_el_fixture_anterior(self):
+        grupo = list("abcdef")
+        self.assertEqual(gen_fixture(grupo, 7, "1"), gen_fixture_anterior(grupo, 7))
 
 
 class Sugerencia(unittest.TestCase):
@@ -164,19 +194,49 @@ class TorneoEnCurso(unittest.TestCase):
         with sqlite3.connect(db.DB_PATH) as con:
             return con.execute("SELECT value FROM config WHERE key='fixture_algo'").fetchone()[0]
 
-    def test_base_nueva_usa_el_fixture_nuevo(self):
+    def preparar(self, version, con_resultados):
         db.init_db()
-        self.assertEqual(self.algo(), "2")
-
-    def test_torneo_con_resultados_conserva_su_fixture(self):
         with sqlite3.connect(db.DB_PATH) as con:
-            con.execute("CREATE TABLE resultados (id TEXT PRIMARY KEY, games_a INTEGER, games_b INTEGER, fase TEXT)")
-            con.execute("INSERT INTO resultados VALUES ('prel-0-0', 9, 7, 'prel')")
+            if version is None:
+                con.execute("DELETE FROM config WHERE key='fixture_algo'")
+            else:
+                con.execute("UPDATE config SET value=? WHERE key='fixture_algo'", (version,))
+            if con_resultados:
+                con.execute("INSERT INTO resultados VALUES ('prel-0-0', 9, 7, 'prel')")
+
+    def test_base_nueva_usa_el_fixture_actual(self):
+        db.init_db()
+        self.assertEqual(self.algo(), FIXTURE_ACTUAL)
+
+    def test_resultados_de_antes_de_las_versiones_quedan_en_la_1(self):
+        self.preparar(None, True)
         db.init_db()
         self.assertEqual(self.algo(), "1")
-        # Reiniciar el servidor no lo cambia
+
+    def test_torneo_con_resultados_conserva_su_version(self):
+        for version in ("1", "2"):
+            with self.subTest(version=version):
+                db.DB_PATH.unlink(missing_ok=True)
+                self.preparar(version, True)
+                db.init_db()
+                # Reiniciar el servidor tampoco lo cambia
+                db.init_db()
+                self.assertEqual(self.algo(), version)
+
+    def test_sin_resultados_pasa_a_la_version_actual(self):
+        for version in (None, "1", "2"):
+            with self.subTest(version=version):
+                db.DB_PATH.unlink(missing_ok=True)
+                self.preparar(version, False)
+                db.init_db()
+                self.assertEqual(self.algo(), FIXTURE_ACTUAL)
+
+    def test_resultados_de_otros_modos_no_cuentan(self):
+        self.preparar("2", False)
+        with sqlite3.connect(db.DB_PATH) as con:
+            con.execute("INSERT INTO resultados VALUES ('final-oro-0', 1, 0, 'final')")
         db.init_db()
-        self.assertEqual(self.algo(), "1")
+        self.assertEqual(self.algo(), FIXTURE_ACTUAL)
 
 
 if __name__ == "__main__":

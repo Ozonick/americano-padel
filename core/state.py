@@ -3,7 +3,7 @@ Construye el estado completo del torneo para sincronizar todos los clientes.
 """
 from .db      import get_db, cfg_get
 from .fixture import (
-    gen_fixture, gen_fixture_anterior, calcular_rondas_sugeridas, calcular_stats, clasificar,
+    FIXTURE_ACTUAL, gen_fixture, calcular_rondas_sugeridas, calcular_stats, clasificar,
 )
 
 
@@ -36,13 +36,13 @@ def get_full_state() -> dict:
     grupos_list = [grupos[k] for k in sorted(grupos.keys())]
 
     # Fixtures
-    gen = gen_fixture_anterior if config.get("fixture_algo") == "1" else gen_fixture
-    fixtures_prel  = [gen(g, rondas_prel) for g in grupos_list]
+    version = config.get("fixture_algo", FIXTURE_ACTUAL)
+    fixtures_prel  = [gen_fixture(g, rondas_prel, version) for g in grupos_list]
     fixtures_final = {}
     if grupos_list:
         stats = calcular_stats(grupos_list, fixtures_prel, resultados)
         for copa, jug in clasificar(grupos_list, stats).items():
-            fixtures_final[copa] = gen(jug, rondas_fin)
+            fixtures_final[copa] = gen_fixture(jug, rondas_fin, version)
 
     # Sugerencia de rondas
     n_jug     = len(jugadores)
@@ -63,4 +63,5 @@ def get_full_state() -> dict:
         "fixtures_final": {k: [list(p) for p in v] for k, v in fixtures_final.items()},
         "resultados":    resultados,
         "sugerencia":    sugerencia,
+        "fixture_anterior": version != FIXTURE_ACTUAL,
     }

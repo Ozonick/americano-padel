@@ -432,7 +432,7 @@ function sugHTML(s, tiempo, rondas) {
 
   html += sugEstado(rondas, tamanos);
 
-  if (S.state.config.fixture_algo === '1')
+  if (S.state.fixture_anterior)
     html += `<div class="sug-nota">Este torneo ya tiene resultados y sigue con las combinaciones con las que empezó, para no mezclar lo cargado. Las nuevas se aplican al tocar 🗑 Nuevo torneo.</div>`;
   return html;
 }

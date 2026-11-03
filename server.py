@@ -21,7 +21,7 @@ from pydantic import BaseModel
 
 from core.db      import init_db, get_db, cfg_get, cfg_set, mex_cfg_get, mex_cfg_set
 from core.state   import get_full_state
-from core.fixture import calcular_rondas_sugeridas, repartir_grupos
+from core.fixture import FIXTURE_ACTUAL, calcular_rondas_sugeridas, repartir_grupos
 import core.mexicano as mexicano
 import core.torneo   as torneo
 
@@ -229,7 +229,7 @@ async def reset(req: ResetReq):
         con.execute("DELETE FROM resultados")
         con.execute("DELETE FROM jugadores")
         con.execute("UPDATE config SET value='config' WHERE key='estado'")
-        con.execute("UPDATE config SET value='2' WHERE key='fixture_algo'")
+        con.execute("UPDATE config SET value=? WHERE key='fixture_algo'", (FIXTURE_ACTUAL,))
     await manager.broadcast(get_full_state())
     return {"ok": True}
 

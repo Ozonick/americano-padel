@@ -12,6 +12,7 @@ PTS_PIERDE = 0
 
 MAX_RONDAS     = 40   # lo que se puede elegir en Configuración
 MAX_GRUPO_SUG  = 24   # /api/sugerencia es pública: no calcula secuencias más grandes
+FIXTURE_ACTUAL = "3"  # versión con la que arrancan los torneos nuevos (config fixture_algo)
 
 
 def pts_partido(propios: int, rivales: int) -> int:
@@ -52,7 +53,7 @@ def _cuartetos_parejos(jugados: tuple):
 
 
 @lru_cache(maxsize=None)
-def _secuencia(n: int) -> tuple:
+def _secuencia(n: int, version: str) -> tuple:
     """
     Orden de partidos de un grupo de n jugadores (por posición en el grupo).
 
@@ -62,22 +63,28 @@ def _secuencia(n: int) -> tuple:
       2. Compañeros lo más repartidos posible
       3. No repetir un partido idéntico ni el mismo compañero dos rondas seguidas
       4. Rivales lo más repartidos posible
-      5. Evitar descansar dos rondas seguidas
+      5. Que cada par comparta cancha una cantidad pareja de veces, sumando
+         compañeros y rivales (la versión "2" no lo tiene en cuenta)
+      6. Evitar descansar dos rondas seguidas
     """
     paso  = rondas_parejas(n)
     ancho = max(1, 30000 // (comb(n, 4) * 3))
     vacia = [[0] * n for _ in range(n)]
-    # Cada estado: costos (compañeros, repetidos, rivales, descansos), jugados, matrices, descansaron, partidos
-    haz = [(0, 0, 0, 0, (0,) * n, vacia, vacia, frozenset(), ())]
+    cuenta_juntos = version != "2"
+    # Cada estado: costos (compañeros, repetidos, rivales, juntos, descansos), jugados, matrices, descansaron, partidos
+    haz = [(0, 0, 0, 0, 0, (0,) * n, vacia, vacia, frozenset(), ())]
 
     for ronda in range(_largo_secuencia(n)):
         hijos = []
-        for e, (c_comp, c_rep, c_riv, c_desc, jugados, comp, riv, descansaron, partidos) in enumerate(haz):
+        for e, (c_comp, c_rep, c_riv, c_junt, c_desc, jugados, comp, riv, descansaron, partidos) in enumerate(haz):
             ultimo = partidos[-1] if partidos else (-1, -1, -1, -1)
             parejas_ultimo = (ultimo[:2], ultimo[2:])
             for cuarteto in _cuartetos_parejos(jugados):
                 a, b, c, d = cuarteto
                 seguidos = sum(1 for j in descansaron if j not in cuarteto)
+                juntos = 0
+                if cuenta_juntos:
+                    juntos = 6 + 2 * sum(comp[x][y] + riv[x][y] for x, y in combinations(cuarteto, 2))
                 for p, q, r, s in ((a, b, c, d), (a, c, b, d), (a, d, b, c)):
                     repetidos = ((p, q) in parejas_ultimo) + ((r, s) in parejas_ultimo)
                     if comp[p][q] and comp[r][s] and (p, q, r, s) in partidos:
@@ -86,22 +93,23 @@ def _secuencia(n: int) -> tuple:
                         c_comp + 2 * (comp[p][q] + comp[r][s]) + 2,
                         c_rep + repetidos,
                         c_riv + 2 * (riv[p][r] + riv[p][s] + riv[q][r] + riv[q][s]) + 4,
+                        c_junt + juntos,
                         c_desc + seguidos,
                         e,
                         (p, q, r, s),
                     ))
-        hijos.sort(key=lambda h: h[:4])
+        hijos.sort(key=lambda h: h[:5])
 
         # El torneo puede terminar en cualquier ronda: solo sigue el mejor reparto de
         # compañeros y, cuando quedan todos parejos, también lo mejor en lo demás.
-        criterios = 3 if (ronda + 1) % paso == 0 else 1
+        criterios = 4 if (ronda + 1) % paso == 0 else 1
         hijos = [h for h in hijos if h[:criterios] == hijos[0][:criterios]]
 
         nuevo, vistos = [], set()
-        for c_comp, c_rep, c_riv, c_desc, e, partido in hijos:
+        for c_comp, c_rep, c_riv, c_junt, c_desc, e, partido in hijos:
             if len(nuevo) >= ancho:
                 break
-            _, _, _, _, jugados, comp, riv, _, partidos = haz[e]
+            _, _, _, _, _, jugados, comp, riv, _, partidos = haz[e]
             p, q, r, s = partido
             comp = [fila[:] for fila in comp]
             riv  = [fila[:] for fila in riv]
@@ -117,23 +125,29 @@ def _secuencia(n: int) -> tuple:
                 continue
             vistos.add(clave)
             descansan = frozenset(i for i in range(n) if i not in partido)
-            nuevo.append((c_comp, c_rep, c_riv, c_desc, jugados, comp, riv, descansan, partidos + (partido,)))
+            nuevo.append((c_comp, c_rep, c_riv, c_junt, c_desc, jugados, comp, riv, descansan, partidos + (partido,)))
         haz = nuevo
 
     return haz[0][-1]
 
 
-def gen_fixture(grupo: list, rondas: int) -> list:
+def gen_fixture(grupo: list, rondas: int, version: str = FIXTURE_ACTUAL) -> list:
     """
     Genera el fixture de un grupo: todas las combinaciones de compañeros y rivales
     que entren en esas rondas, con los partidos parejos entre jugadores.
     Si las rondas superan la vuelta completa, la secuencia vuelve a empezar.
+
+    Los resultados se guardan por número de ronda: un torneo que ya tiene resultados
+    sigue con la versión con la que arrancó hasta el próximo reset (ver init_db).
     """
+    if version == "1":
+        return gen_fixture_anterior(grupo, rondas)
+
     n = len(grupo)
     if n < 4:
         return []
 
-    secuencia = _secuencia(n)
+    secuencia = _secuencia(n, version)
     return [
         tuple(grupo[i] for i in secuencia[r % len(secuencia)])
         for r in range(rondas)
@@ -141,11 +155,7 @@ def gen_fixture(grupo: list, rondas: int) -> list:
 
 
 def gen_fixture_anterior(grupo: list, rondas: int) -> list:
-    """
-    Fixture de los torneos que ya tenían resultados antes del cambio de combinaciones
-    (config fixture_algo = "1"). Los resultados se guardan por número de ronda, así
-    que esos torneos tienen que seguir con los mismos partidos hasta el próximo reset.
-    """
+    """Versión "1": la de los torneos que ya tenían resultados antes de la secuencia nueva."""
     n = len(grupo)
     if n < 4:
         return []
@@ -195,7 +205,7 @@ def repartir_grupos(n_jugadores: int, n_canchas: int) -> list:
 
 def _veces_companeros(n: int, rondas: int) -> tuple:
     """Mínimo y máximo de veces que una pareja jugó junta en esas rondas."""
-    secuencia = _secuencia(n)
+    secuencia = _secuencia(n, FIXTURE_ACTUAL)
     veces = {par: 0 for par in combinations(range(n), 2)}
     for r in range(rondas):
         a, b, c, d = secuencia[r % len(secuencia)]

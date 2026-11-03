@@ -414,8 +414,11 @@ function aplicarFontSize() {
 try { S.keepAlive = localStorage.getItem('ka') === 'true'; } catch(e) {}
 try { S.tri = cargarTri(); } catch(e) {}
 
-connectWS();
-restaurarAuth();
+// Recién cuando cargaron todos los scripts: renderTab necesita las vistas de los demás
+document.addEventListener('DOMContentLoaded', () => {
+  connectWS();
+  restaurarAuth();
+});
 
 setTimeout(() => {
   if (S.keepAlive) _aplicarKeepAlive();
