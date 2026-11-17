@@ -7,7 +7,7 @@ Lógica completa del modo Mexicano:
 """
 import random as rnd
 from .db import get_db, mex_cfg_get, mex_cfg_set
-from .fixture import pts_partido
+from .fixture import clave_ranking, stats_vacias, sumar_partido
 
 
 # ── Consultas ─────────────────────────────────────────────────────────────────
@@ -36,25 +36,11 @@ def get_stats() -> dict:
     stats: dict = {}
     for p in partidos:
         p = dict(p)
-        ga, gb   = p["games_a"] or 0, p["games_b"] or 0
-        pts_a    = pts_partido(ga, gb)
-        pts_b    = pts_partido(gb, ga)
-
+        ga, gb = p["games_a"] or 0, p["games_b"] or 0
         for j in [p["j1"], p["j2"]]:
-            if j not in stats:
-                stats[j] = {"gf": 0, "gc": 0, "pts": 0, "pj": 0}
-            stats[j]["gf"]  += ga
-            stats[j]["gc"]  += gb
-            stats[j]["pts"] += pts_a
-            stats[j]["pj"]  += 1
-
+            sumar_partido(stats.setdefault(j, stats_vacias()), ga, gb)
         for j in [p["j3"], p["j4"]]:
-            if j not in stats:
-                stats[j] = {"gf": 0, "gc": 0, "pts": 0, "pj": 0}
-            stats[j]["gf"]  += gb
-            stats[j]["gc"]  += ga
-            stats[j]["pts"] += pts_b
-            stats[j]["pj"]  += 1
+            sumar_partido(stats.setdefault(j, stats_vacias()), gb, ga)
 
     return stats
 
@@ -80,20 +66,14 @@ def armar_ronda(
     """
     Arma los partidos de una ronda:
       - Ronda 1: orden aleatorio.
-      - Siguientes: jugadores ordenados por pts desc (mexicano clásico).
+      - Siguientes: jugadores ordenados por el ranking (puntos, ganados, diferencia).
     Respeta el límite de canchas: max canchas×4 jugadores por ronda,
     el resto descansa.
     """
     jug = [j for j in jugadores if j.strip()]
 
     if stats and ronda > 1:
-        jug = sorted(
-            jug,
-            key=lambda j: (
-                -stats.get(j, {}).get("pts", 0),
-                -(stats.get(j, {}).get("gf", 0) - stats.get(j, {}).get("gc", 0)),
-            ),
-        )
+        jug = sorted(jug, key=lambda j: clave_ranking(stats.get(j, {})))
     else:
         rnd.shuffle(jug)
 
@@ -152,13 +132,7 @@ def get_state() -> dict:
     stats        = get_stats()
     nombres      = [j["nombre"] for j in jugadores]
 
-    ranking = sorted(
-        nombres,
-        key=lambda j: (
-            -stats.get(j, {}).get("pts", 0),
-            -(stats.get(j, {}).get("gf", 0) - stats.get(j, {}).get("gc", 0)),
-        ),
-    )
+    ranking = sorted(nombres, key=lambda j: clave_ranking(stats.get(j, {})))
 
     return {
         "type":             "mexicano_state",

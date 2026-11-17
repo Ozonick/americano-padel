@@ -26,7 +26,7 @@
   const nombres = xs => listaY(xs.map(esc));
   const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
   const ptsTxt = n => n === 1 ? '1 pt' : `${n} pts`;
-  const chipPts = n => `<span class="bt-chip ${n === PTS_GANA ? 'g' : n === PTS_EMPATA ? 'e' : 'p'}">+${ptsTxt(n)}</span>`;
+  const chipPts = (pro, con) => `<span class="bt-chip ${resultadoPareja(pro, con)}">${ptsLabel(pro)}</span>`;
   const games = () => parseInt(S.state?.config?.games_partido) || 16;
 
   // Mismo corte que la pestaña Finales: 1°-2° Oro, 3°-4° Plata, 5°-6° Bronce
@@ -92,7 +92,7 @@
 
   // Centro del partido: inputs para el admin, marcador para el resto
   function centroHTML(g, r) {
-    const chips = r.jugado ? chipsHTML(ptsLabel(ptsPartido(r.ga, r.gb)), ptsLabel(ptsPartido(r.gb, r.ga))) : '';
+    const chips = r.jugado ? chipsHTML(r.ga, r.gb) : '';
     const centro = esAdmin() ? inputsHTML(g, r)
       : r.jugado ? `<span class="bt-res">${r.ga} – ${r.gb}</span>`
       : '<span class="bt-pend">por jugar</span>';
@@ -244,7 +244,7 @@
       if (r.jugado) {
         jugados++;
         const pro = enA ? r.ga : r.gb, con = enA ? r.gb : r.ga;
-        res = `<span class="res-l">${pro > con ? 'Ganaste' : pro === con ? 'Empataste' : 'Perdiste'} ${pro} – ${con} ${chipPts(ptsPartido(pro, con))}</span>`;
+        res = `<span class="res-l">${pro > con ? 'Ganaste' : pro === con ? 'Empataste' : 'Perdiste'} ${pro} – ${con} ${chipPts(pro, con)}</span>`;
       }
       items.push(`<li class="juega${i === B.ronda ? ' act' : ''}"><span class="r">Ronda ${i + 1}</span><span>${r.jugado ? 'Jugaste' : 'Jugás'}
         con <strong>${esc(c)}</strong> contra ${nombres(rival)}${res}</span></li>`);
@@ -286,15 +286,11 @@
     const a = r ? `${esc(r.a[0])} + ${esc(r.a[1])}` : 'Pareja 1', b = r ? `${esc(r.b[0])} + ${esc(r.b[1])}` : 'Pareja 2';
     const gana = Math.min(ng, Math.floor(ng / 2) + 2);
     return `<details class="card bt-punt"><summary>Cómo se puntúa</summary><div class="bt-punt-in">
-      <p>Cada partido es a <strong>${ng} games</strong>. Cada jugador de la pareja suma
-        <span class="bt-chip g">${ptsTxt(PTS_GANA)}</span> si gana,
-        <span class="bt-chip e">${ptsTxt(PTS_EMPATA)}</span> si empata y
-        <span class="bt-chip p">${ptsTxt(PTS_PIERDE)}</span> si pierde.</p>
+      <p>Cada partido es a <strong>${ng} games</strong>. Cada jugador suma como puntos
+        <strong>los games que hizo su pareja</strong>: ganes o pierdas, cada game cuenta.</p>
       <div class="bt-ej"><span>${a}</span><span class="res">${gana} – ${ng - gana}</span><span>${b}</span>
-        <span class="bt-chip g">${ptsTxt(PTS_GANA)} c/u</span><span class="bt-chip p">${ptsTxt(PTS_PIERDE)} c/u</span></div>
-      ${ng % 2 === 0 ? `<div class="bt-ej"><span>${a}</span><span class="res">${ng / 2} – ${ng / 2}</span><span>${b}</span>
-        <span class="bt-chip e">${ptsTxt(PTS_EMPATA)} c/u</span></div>` : ''}
-      <p>La tabla se ordena por <strong>puntos</strong>, después por <strong>diferencia de games</strong> y después por <strong>games a favor</strong>.
+        <span class="bt-chip g">${ptsLabel(gana)} c/u</span><span class="bt-chip p">${ptsLabel(ng - gana)} c/u</span></div>
+      <p>La tabla se ordena por <strong>puntos</strong>; si hay empate, por <strong>partidos ganados</strong> y después por <strong>diferencia de games</strong>.
         Al terminar, 1° y 2° de cada grupo van a la Copa Oro, 3° y 4° a la Plata y 5° y 6° a la Bronce.</p>
     </div></details>`;
   }
@@ -314,12 +310,12 @@
       });
       const jugadas = g.rondas.filter(r => r.jugado).length;
       const filas = sortGrupo(g.nombres, stats).map((n, i) => {
-        const s = stats[n] || { pj: 0, gf: 0, gc: 0, pts: 0 }, d = s.gf - s.gc, copa = copaDe(i), x = gep[n];
+        const s = stats[n] || statsVacias(), d = s.gf - s.gc, copa = copaDe(i), x = gep[n];
         return `<tr class="${n === B.jug ? 'yo' : ''}"${copa ? ` style="--copa:${copa.color}"` : ''}>
           <td class="ps">${i + 1}</td><td class="l nm">${esc(n)}</td>
           <td class="pt" style="color:${g.col.txt}">${s.pts}</td><td class="anc">${s.pj}</td>
           <td>${x.g}-${x.e}-${x.p}</td>
-          <td class="${d > 0 ? 'mas' : d < 0 ? 'menos' : ''}">${d > 0 ? '+' : ''}${d}</td><td class="anc">${s.gf}</td></tr>`;
+          <td class="${d > 0 ? 'mas' : d < 0 ? 'menos' : ''}">${d > 0 ? '+' : ''}${d}</td></tr>`;
       }).join('');
       return `<section class="card">
         <div class="card-hdr" style="background:${g.col.bg};border-bottom:2px solid ${g.col.txt}40">
@@ -329,8 +325,7 @@
         </div>
         <table class="bt-pos">
           <thead><tr><th>#</th><th class="l">Jugador</th><th>Pts</th><th class="anc">PJ</th>
-            <th title="Ganados - Empatados - Perdidos">G-E-P</th><th title="Diferencia de games">Dif</th>
-            <th class="anc" title="Games a favor">GF</th></tr></thead>
+            <th title="Ganados - Empatados - Perdidos">G-E-P</th><th title="Diferencia de games">Dif</th></tr></thead>
           <tbody>${filas}</tbody>
         </table></section>`;
     }).join('');

@@ -32,12 +32,29 @@ const COLORES = [
 ];
 
 
-// ── Puntuación: ganar 2 · empatar 1 · perder 0 (cada jugador de la pareja) ───
-const PTS_GANA = 2, PTS_EMPATA = 1, PTS_PIERDE = 0;
-function ptsPartido(propios, rivales) {
-  return propios > rivales ? PTS_GANA : propios === rivales ? PTS_EMPATA : PTS_PIERDE;
+// ── Puntuación americana: cada jugador suma los games que hizo su pareja ─────
+// (un 9-7 le da 9 pts a cada ganador y 7 a cada perdedor)
+function statsVacias() { return { pj: 0, pg: 0, gf: 0, gc: 0, pts: 0 }; }
+function sumarPartido(s, propios, rivales) {
+  s.pj++; s.gf += propios; s.gc += rivales; s.pts += propios;
+  if (propios > rivales) s.pg++;
 }
-function ptsLabel(n) { return n === 1 ? '1pt' : `${n}pts`; }
+// Orden de la tabla: más puntos, después más partidos ganados, después mejor diferencia
+function compararRanking(sa = {}, sb = {}) {
+  return ((sb.pts || 0) - (sa.pts || 0))
+      || ((sb.pg || 0) - (sa.pg || 0))
+      || (((sb.gf || 0) - (sb.gc || 0)) - ((sa.gf || 0) - (sa.gc || 0)));
+}
+// 'g' ganó · 'e' empató · 'p' perdió (para colorear los chips)
+function resultadoPareja(propios, rivales) { return propios > rivales ? 'g' : propios === rivales ? 'e' : 'p'; }
+function ptsLabel(n) { return n === 1 ? '+1 pt' : `+${n} pts`; }
+// Marca en rojo y avisa si cargaron más games de los que tiene el partido
+function fueraDeRango(inputEl, val, total) {
+  const fuera = val > total;
+  inputEl.classList.toggle('g-error', fuera);
+  if (fuera) toast(`Máximo ${total} games por partido`);
+  return fuera;
+}
 
 
 // ── Roles ─────────────────────────────────────────────────────────────────────
@@ -132,11 +149,8 @@ function updatePtsChips(data) {
     (fixtures_prel[gi] || []).forEach(([j1, j2, j3, j4], ri) => {
       const res = (resultados || {})[`prel-${gi}-${ri}`] || {};
       if (res.ga == null || res.gb == null) return;
-      const ga = +res.ga, gb = +res.gb;
-      const p1 = ptsLabel(ptsPartido(ga, gb));
-      const p2 = ptsLabel(ptsPartido(gb, ga));
       const el = document.getElementById(`chips-${gi}-${ri}`);
-      if (el) el.innerHTML = chipsHTML(p1, p2);
+      if (el) el.innerHTML = chipsHTML(+res.ga, +res.gb);
     });
   });
 }
@@ -343,15 +357,15 @@ async function api(path, body) {
   }
 }
 
-function chipsHTML(p1, p2) {
-  const cs = p =>
-    `${p === ptsLabel(PTS_GANA)   ? 'background:#39FF14;color:#000;font-weight:800'
-      : p === ptsLabel(PTS_EMPATA) ? 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700'
-      : 'background:rgba(255,255,255,.08);color:#666'
-    };border-radius:4px;padding:2px 8px;font-size:10px`;
-  return `<span style="${cs(p1)}">${p1}</span>`
-       + `<span style="color:var(--txt3);font-size:9px;margin:0 3px">vs</span>`
-       + `<span style="${cs(p2)}">${p2}</span>`;
+// Puntos que suma cada jugador de cada pareja en un partido que terminó ga-gb
+function chipsHTML(ga, gb) {
+  const estilo = {
+    g: 'background:#39FF14;color:#000;font-weight:800',
+    e: 'background:rgba(255,215,0,.3);color:#FFD700;font-weight:700',
+    p: 'background:rgba(255,255,255,.08);color:#888',
+  };
+  const chip = (pro, con) => `<span style="${estilo[resultadoPareja(pro, con)]};border-radius:4px;padding:2px 8px;font-size:10px;white-space:nowrap">${ptsLabel(pro)}</span>`;
+  return chip(ga, gb) + `<span style="color:var(--txt3);font-size:9px;margin:0 3px">vs</span>` + chip(gb, ga);
 }
 
 function noAccess() {

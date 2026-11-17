@@ -47,16 +47,11 @@ function renderFixture() {
       const res  = (resultados || {})[key] || {};
       const ga   = res.ga ?? '';
       const gb   = res.gb ?? '';
-      let p1 = '', p2 = '';
-      if (ga !== '' && gb !== '') {
-        const a = +ga, b = +gb;
-        p1 = ptsLabel(ptsPartido(a, b));
-        p2 = ptsLabel(ptsPartido(b, a));
-      }
+      const jugado = ga !== '' && gb !== '';
 
-      html += `<div style="padding:9px 12px;border-bottom:1px solid var(--brd);${p1 ? 'background:rgba(0,0,0,.1)' : ''}">
+      html += `<div style="padding:9px 12px;border-bottom:1px solid var(--brd);${jugado ? 'background:rgba(0,0,0,.1)' : ''}">
         <div style="font-size:10px;font-weight:600;color:${col.txt};opacity:.6;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">
-          Ronda ${r + 1} ${p1 ? '✓' : ''}
+          Ronda ${r + 1} ${jugado ? '✓' : ''}
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
           <div style="flex:1;min-width:0">
@@ -81,7 +76,7 @@ function renderFixture() {
                 oninput="autoFill(this)">
             </div>
             <div id="chips-${gi}-${r}" style="display:flex;gap:3px;font-size:10px;min-height:15px">
-              ${(p1 && p2) ? chipsHTML(p1, p2) : ''}
+              ${jugado ? chipsHTML(+ga, +gb) : ''}
             </div>
           </div>
         </div>
@@ -102,6 +97,8 @@ function autoFill(inputEl) {
   const key   = inputEl.dataset.key;
 
   if (isNaN(val) || val < 0) return;
+  // Cada game suma puntos: un dedazo (73 en vez de 7) no se guarda
+  if (fueraDeRango(inputEl, val, total)) return;
 
   const otroSide = side === 'a' ? 'b' : 'a';
   const elOtro   = document.querySelector(`input[data-pair="${pair}"][data-side="${otroSide}"]`);
@@ -116,11 +113,7 @@ function autoFill(inputEl) {
 
   const [gi, ri] = pair.split('-');
   const chipsEl  = document.getElementById(`chips-${gi}-${ri}`);
-  if (chipsEl && ga + gb > 0) {
-    const p1 = ptsLabel(ptsPartido(ga, gb));
-    const p2 = ptsLabel(ptsPartido(gb, ga));
-    chipsEl.innerHTML = chipsHTML(p1, p2);
-  }
+  if (chipsEl && ga + gb > 0) chipsEl.innerHTML = chipsHTML(ga, gb);
 
   const gaFinal = side === 'a' ? val : parseInt(elOtro?.value);
   const gbFinal = side === 'b' ? val : parseInt(elOtro?.value);
@@ -141,30 +134,20 @@ function calcStats() {
   const { grupos, fixtures_prel, resultados } = S.state;
   const stats = {};
   (grupos || []).forEach((g, gi) => {
-    g.forEach(j => { stats[j] = { pj: 0, gf: 0, gc: 0, pts: 0, gi }; });
+    g.forEach(j => { stats[j] = { ...statsVacias(), gi }; });
     (fixtures_prel[gi] || []).forEach(([j1, j2, j3, j4], ri) => {
       const res = (resultados || {})[`prel-${gi}-${ri}`];
       if (!res || res.ga == null) return;
       const ga = +res.ga, gb = +res.gb;
-      [j1, j2].forEach(j => { if (stats[j]) { stats[j].gf += ga; stats[j].gc += gb; stats[j].pj++; } });
-      [j3, j4].forEach(j => { if (stats[j]) { stats[j].gf += gb; stats[j].gc += ga; stats[j].pj++; } });
-      const p1 = ptsPartido(ga, gb);
-      const p2 = ptsPartido(gb, ga);
-      [j1, j2].forEach(j => { if (stats[j]) stats[j].pts += p1; });
-      [j3, j4].forEach(j => { if (stats[j]) stats[j].pts += p2; });
+      [j1, j2].forEach(j => { if (stats[j]) sumarPartido(stats[j], ga, gb); });
+      [j3, j4].forEach(j => { if (stats[j]) sumarPartido(stats[j], gb, ga); });
     });
   });
   return stats;
 }
 
 function sortGrupo(grupo, stats) {
-  return [...grupo].sort((a, b) => {
-    const sa = stats[a] || {}, sb = stats[b] || {};
-    if ((sb.pts || 0) !== (sa.pts || 0)) return (sb.pts || 0) - (sa.pts || 0);
-    const da = (sa.gf || 0) - (sa.gc || 0), db = (sb.gf || 0) - (sb.gc || 0);
-    if (db !== da) return db - da;
-    return (sb.gf || 0) - (sa.gf || 0);
-  });
+  return [...grupo].sort((a, b) => compararRanking(stats[a], stats[b]));
 }
 
 function renderPosiciones() {
@@ -182,17 +165,16 @@ function renderPosiciones() {
       </span>
     </div>
     <table class="pos-table">
-      <thead><tr><th>Pos</th><th>Jugador</th><th>PJ</th><th>GF</th><th>GC</th><th>Dif</th><th>Pts</th></tr></thead>
+      <thead><tr><th>Pos</th><th>Jugador</th><th>PJ</th><th title="Partidos ganados">PG</th><th title="Diferencia de games">Dif</th><th>Pts</th></tr></thead>
       <tbody>`;
     sorted.forEach((j, pos) => {
-      const s   = stats[j] || { pj: 0, gf: 0, gc: 0, pts: 0 };
+      const s   = stats[j] || statsVacias();
       const dif = s.gf - s.gc;
       html += `<tr>
         <td><span class="rk ${pos === 0 ? 'g' : pos === 1 ? 's' : pos === 2 ? 'b' : ''}">${pos + 1}</span></td>
         <td>${j}</td>
         <td style="color:#7a9bbf">${s.pj}</td>
-        <td style="color:#5db896">${s.gf}</td>
-        <td style="color:#c47a7a">${s.gc}</td>
+        <td style="color:#5db896">${s.pg}</td>
         <td class="${dif > 0 ? 'dif-p' : dif < 0 ? 'dif-n' : ''}">${dif > 0 ? '+' : ''}${dif}</td>
         <td><span class="pts-val" style="color:${col.txt}">${s.pts}</span></td>
       </tr>`;
@@ -224,11 +206,7 @@ function renderFinales() {
     if (!candidatos.length) return;
 
     // Rankear globalmente y armar duos (1°+2°, 3°+4°, ...)
-    const rankGlobal = [...candidatos].sort((a, b) => {
-      const sa = stats[a] || {}, sb = stats[b] || {};
-      if ((sb.pts || 0) !== (sa.pts || 0)) return (sb.pts || 0) - (sa.pts || 0);
-      return ((sb.gf || 0) - (sb.gc || 0)) - ((sa.gf || 0) - (sa.gc || 0));
-    });
+    const rankGlobal = [...candidatos].sort((a, b) => compararRanking(stats[a], stats[b]));
     const duos = [];
     for (let i = 0; i + 1 < rankGlobal.length; i += 2) duos.push([rankGlobal[i], rankGlobal[i + 1]]);
     const partidos = [];

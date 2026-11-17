@@ -67,7 +67,7 @@ ADMIN_PASSWORD=tu-clave TORNEO_PASSWORD=otra-clave uvicorn server:app --reload
 2. **Admin → Jugadores**: ingresá los 18 nombres → "Sortear" para grupos random → ajustá si querés → "Guardar"
 3. **Fixture**: a medida que terminan los partidos, el admin carga los games
    - Todos los celulares se actualizan en tiempo real sin recargar
-4. **Posiciones**: ranking automático por puntos → diferencia → games a favor
+4. **Posiciones**: ranking automático por puntos → partidos ganados → diferencia de games
 5. **Finales**: los mejores de cada grupo se reubian automáticamente en Copa Oro / Plata / Bronce
 
 ### Nuevo torneo:
@@ -76,10 +76,10 @@ Sidebar → "Nuevo torneo" → confirmar → borra todo y empieza de cero.
 
 ## Puntuación
 
-- Ganado: 2 puntos
-- Empate: 1 punto  
-- Perdido: 0 puntos
-- Desempate: Diferencia de games → Games a favor
+Puntuación americana: cada jugador suma como puntos los games que hizo su pareja.
+Un partido 9–7 le da 9 puntos a cada ganador y 7 a cada perdedor.
+
+- Desempate: partidos ganados → diferencia de games
 
 ## Nota sobre Render gratuito
 

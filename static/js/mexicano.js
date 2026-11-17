@@ -89,12 +89,7 @@ function renderMexicano() {
 
     m.partidos_actuales.forEach(p => {
       const ga = p.games_a ?? '', gb = p.games_b ?? '';
-      let p1 = '', p2 = '';
-      if (ga !== '' && gb !== '') {
-        const a = +ga, b = +gb;
-        p1 = ptsLabel(ptsPartido(a, b));
-        p2 = ptsLabel(ptsPartido(b, a));
-      }
+      const jugado = ga !== '' && gb !== '';
       html += `<div class="partido-row" style="border-left:4px solid #29ABE2;padding-left:12px">
         <span class="g-pill" style="background:rgba(41,171,226,.15);color:#29ABE2;font-weight:800">${p.cancha}</span>
         <div class="equipos"><div class="e-names">
@@ -114,7 +109,7 @@ function renderMexicano() {
               data-pair="mex-${p.cancha}" data-side="b" data-total="${games}" data-resid="${p.id}"
               oninput="autoFillMex(this)">
           </div>
-          ${p1 && p2 ? `<div style="display:flex;gap:4px;font-size:11px">${chipsHTML(p1, p2)}</div>` : ''}
+          ${jugado ? `<div style="display:flex;gap:4px;font-size:11px">${chipsHTML(+ga, +gb)}</div>` : ''}
         </div>
       </div>`;
     });
@@ -126,17 +121,16 @@ function renderMexicano() {
     html += `<div class="card"><div class="card-hdr">
       <span class="card-title">🏆 Ranking acumulado</span></div>
       <table class="pos-table">
-        <thead><tr><th>Pos</th><th>Jugador</th><th>PJ</th><th>GF</th><th>GC</th><th>Dif</th><th>Pts</th></tr></thead>
+        <thead><tr><th>Pos</th><th>Jugador</th><th>PJ</th><th title="Partidos ganados">PG</th><th title="Diferencia de games">Dif</th><th>Pts</th></tr></thead>
         <tbody>`;
     m.ranking.forEach((j, pos) => {
-      const s   = m.stats[j] || { pj: 0, gf: 0, gc: 0, pts: 0 };
+      const s   = m.stats[j] || statsVacias();
       const dif = s.gf - s.gc;
       html += `<tr>
         <td><span class="rk ${pos === 0 ? 'g' : pos === 1 ? 's' : ''}">${pos + 1}</span></td>
         <td>${j}</td>
         <td style="color:#7a9bbf">${s.pj}</td>
-        <td style="color:#5db896">${s.gf}</td>
-        <td style="color:#c47a7a">${s.gc}</td>
+        <td style="color:#5db896">${s.pg}</td>
         <td class="${dif > 0 ? 'dif-p' : dif < 0 ? 'dif-n' : ''}">${dif > 0 ? '+' : ''}${dif}</td>
         <td><span class="pts-val" style="color:#29ABE2">${s.pts}</span></td>
       </tr>`;
@@ -153,7 +147,7 @@ function renderMexicano() {
         <div style="font-size:18px;font-weight:600;color:#29ABE2">¡Campeón!</div>
         <div style="font-size:22px;font-weight:700;margin-top:4px">${g}</div>
         <div style="font-size:13px;color:var(--txt2);margin-top:8px">
-          ${m.stats[g]?.pts || 0} pts · ${m.stats[g]?.gf || 0} games a favor
+          ${m.stats[g]?.pts || 0} pts · ${m.stats[g]?.pg || 0} partidos ganados
         </div>
         ${esAdmin() ? `<button class="btn-sec" style="margin-top:12px;width:auto;padding:8px 20px"
           onclick="mexReset()">Jugar de nuevo</button>` : ''}
@@ -172,6 +166,8 @@ function autoFillMex(inputEl) {
   const resId = inputEl.dataset.resid;
 
   if (isNaN(val) || val < 0) return;
+  // Cada game suma puntos: un dedazo (73 en vez de 7) no se guarda
+  if (fueraDeRango(inputEl, val, total)) return;
 
   const otroSide = side === 'a' ? 'b' : 'a';
   const elOtro   = document.querySelector(

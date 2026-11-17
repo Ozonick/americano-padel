@@ -111,6 +111,7 @@ input{font-family:'DM Sans',sans-serif}
   -moz-appearance:textfield}
 .g-in:focus{box-shadow:0 0 0 3px rgba(41,171,226,.15)}
 .g-in:disabled{opacity:.4;cursor:not-allowed}
+.g-in.g-error{border-color:var(--red)!important;color:var(--red);box-shadow:0 0 0 3px var(--red-d)}
 .g-in::-webkit-inner-spin-button,
 .g-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .g-dash{color:var(--txt3);font-size:13px}

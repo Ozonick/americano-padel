@@ -5,23 +5,31 @@ from functools import lru_cache
 from itertools import combinations
 from math import comb, gcd, lcm
 
-# Puntuación por partido (cada jugador de la pareja): ganar 2 · empatar 1 · perder 0
-PTS_GANA   = 2
-PTS_EMPATA = 1
-PTS_PIERDE = 0
-
 MAX_RONDAS     = 40   # lo que se puede elegir en Configuración
 MAX_GRUPO_SUG  = 24   # /api/sugerencia es pública: no calcula secuencias más grandes
 FIXTURE_ACTUAL = "3"  # versión con la que arrancan los torneos nuevos (config fixture_algo)
 
 
-def pts_partido(propios: int, rivales: int) -> int:
-    """Puntos que suma cada jugador según los games propios vs. los del rival."""
-    if propios > rivales:
-        return PTS_GANA
-    if propios == rivales:
-        return PTS_EMPATA
-    return PTS_PIERDE
+# ── Puntuación americana ──────────────────────────────────────────────────────
+# Cada jugador suma como puntos los games que hizo su pareja: un 9-7 le da 9 a
+# cada ganador y 7 a cada perdedor.
+
+def stats_vacias() -> dict:
+    return {"pj": 0, "pg": 0, "gf": 0, "gc": 0, "pts": 0}
+
+
+def sumar_partido(s: dict, propios: int, rivales: int) -> None:
+    """Suma a las stats de un jugador un partido que su pareja terminó propios-rivales."""
+    s["pj"]  += 1
+    s["pg"]  += propios > rivales
+    s["gf"]  += propios
+    s["gc"]  += rivales
+    s["pts"] += propios
+
+
+def clave_ranking(s: dict) -> tuple:
+    """Orden de la tabla: más puntos, después más partidos ganados, después mejor diferencia."""
+    return (-s.get("pts", 0), -s.get("pg", 0), -(s.get("gf", 0) - s.get("gc", 0)))
 
 
 def rondas_parejas(n: int) -> int:
@@ -299,13 +307,13 @@ def calcular_stats(
     resultados:   dict,
 ) -> dict:
     """
-    Calcula PJ, GF, GC y PTS para cada jugador a partir de los resultados cargados.
+    Calcula PJ, PG, GF, GC y PTS para cada jugador a partir de los resultados cargados.
     """
     stats: dict = {}
 
     for gi, grupo in enumerate(grupos):
         for j in grupo:
-            stats[j] = {"pj": 0, "gf": 0, "gc": 0, "pts": 0, "gi": gi}
+            stats[j] = {**stats_vacias(), "gi": gi}
 
         for ri, partido in enumerate(fixtures_prel[gi]):
             j1, j2, j3, j4 = partido
@@ -317,43 +325,22 @@ def calcular_stats(
             ga, gb = int(res["ga"]), int(res["gb"])
             for j in [j1, j2]:
                 if j in stats:
-                    stats[j]["gf"] += ga
-                    stats[j]["gc"] += gb
-                    stats[j]["pj"] += 1
+                    sumar_partido(stats[j], ga, gb)
             for j in [j3, j4]:
                 if j in stats:
-                    stats[j]["gf"] += gb
-                    stats[j]["gc"] += ga
-                    stats[j]["pj"] += 1
-
-            p1 = pts_partido(ga, gb)
-            p2 = pts_partido(gb, ga)
-            for j in [j1, j2]:
-                if j in stats:
-                    stats[j]["pts"] += p1
-            for j in [j3, j4]:
-                if j in stats:
-                    stats[j]["pts"] += p2
+                    sumar_partido(stats[j], gb, ga)
 
     return stats
 
 
 def clasificar(grupos: list, stats: dict) -> dict:
     """
-    Ordena cada grupo por pts/dif y arma los clasificados por copa:
+    Ordena cada grupo por clave_ranking y arma los clasificados por copa:
       oro   → 1° y 2° de cada grupo
       plata → 3° y 4°
       bronce → 5° y 6°
     """
-    def sort_key(j):
-        s = stats.get(j, {})
-        return (
-            -s.get("pts", 0),
-            -(s.get("gf", 0) - s.get("gc", 0)),
-            -s.get("gf", 0),
-        )
-
-    grupos_sorted = [sorted(g, key=sort_key) for g in grupos]
+    grupos_sorted = [sorted(g, key=lambda j: clave_ranking(stats.get(j, {}))) for g in grupos]
 
     copas: dict = {"oro": [], "plata": [], "bronce": []}
     for slc, copa in [
